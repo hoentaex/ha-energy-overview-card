@@ -8,9 +8,9 @@
 
 **[Deutsch](#deutsch) · [English](#english)**
 
-> [!NOTE]
-> In Entwicklung – Screenshots, Optionen und der erste Release `v0.1.0` folgen.
-> Work in progress – screenshots, options and the first release `v0.1.0` will follow.
+| Hell / Light | Dunkel / Dark |
+|---|---|
+| <img src="screenshots/card-day-light.png" alt="Energy Overview Card, Tagesansicht, helles Theme" width="420"> | <img src="screenshots/card-day-dark.png" alt="Energy Overview Card, Tagesansicht, dunkles Theme" width="420"> |
 
 ---
 
@@ -32,59 +32,235 @@ Aufbau und Look orientieren sich an den Karten von [juju35](https://github.com/j
 
 ### Was die Karte macht – und was nicht
 
-- **Zeigt an:** Live-Energiefluss zwischen Solar, Netz, Haus und Akku; Bilanz, Autarkie, Eigenverbrauch und
-  CO₂-Ersparnis für Tag / Woche / Monat; Leistungsdiagramm des Tages; Verlauf von Verbrauch, Solar und Akku.
-- **Datenquellen:** die Live-Entities und die Langzeit-Statistik von Home Assistant – standardmäßig die Quellen aus dem
-  **Energie-Dashboard**, jede einzeln überschreibbar.
-- **Nicht enthalten:** Steuerlogik, Kosten und Tarife (dafür gibt es die Tibber Battery Card).
+- **Live:** Energiefluss zwischen Solar, Netz, Haus und Akku (aktive Flüsse animiert, Tempo nach Leistung),
+  Ladestand mit kWh, Status-Pill („Netz versorgt Haus“, „PV-Überschuss · Akku lädt“, „PV deckt Haus“,
+  „Akku versorgt Haus“, „Einspeisung“).
+- **Zeitraum Tag / Woche / Monat** (unbegrenzt zurückblättern): Bilanz mit Verbrauch (aus Solar / Akku / Netz) und
+  Erzeugung (ins Haus / in den Akku / Einspeisung), Autarkie, Eigenverbrauch, CO₂ gespart.
+- **Leistungsdiagramm** des Tages (Netzbezug, Einspeisung, PV, Verbrauch, Akku-Ladestand) mit Fadenkreuz.
+- **Verlauf** als Säulen: Verbrauch (mit Nachtbereichen), Solar (heute mit Prognose) und Akku (Ladung nach oben,
+  Entladung nach unten, Ladestand-Linie).
+- **Nicht enthalten:** Steuerlogik, Kosten und Tarife – dafür gibt es die Tibber Battery Card.
+
+| Woche | Monat |
+|---|---|
+| <img src="screenshots/card-week-light.png" alt="Wochenansicht" width="400"> | <img src="screenshots/card-month-dark.png" alt="Monatsansicht" width="400"> |
 
 ### Was du brauchst
 
 | Baustein | Wofür | Pflicht? |
 |---|---|---|
 | Home Assistant 2024.8 oder neuer | | ja |
-| Eingerichtetes **Energie-Dashboard** (Netz, Solar, Akku) **oder** eigene Statistik-Sensoren | Bilanz, Verlauf | ja |
-| Leistungssensoren in W: PV, Netz, Akku, Hausverbrauch | Live-Fluss, Status, Leistungsdiagramm | empfohlen |
-| Ladestand-Sensor in % und Akkukapazität | Akku-Knoten, SoC-Linie | empfohlen |
-| Solar-Prognose im Energie-Dashboard (z. B. Forecast.Solar) | Prognose heute | optional |
+| Eingerichtetes **Energie-Dashboard** (Netz, Solar, Akku) **oder** eigene Energie-Sensoren mit Statistik (`state_class: total` / `total_increasing`) | Bilanz, Verlauf | ja |
+| Leistungssensoren in W oder kW: PV, Netz, Akku, Hausverbrauch | Live-Fluss, Status, Leistungsdiagramm | empfohlen – ohne Angabe nimmt die Karte die Leistungssensoren aus dem Energie-Dashboard |
+| Ladestand-Sensor in % und Akkukapazität | Akku-Knoten, Ladestand-Linie | empfohlen |
+| Solar-Prognose im Energie-Dashboard (z. B. [Forecast.Solar](https://www.home-assistant.io/integrations/forecast_solar/)) | Prognose heute | optional |
+| Ein Energie-Sensor für die Akkuladung **aus dem Netz** | Aufteilung der Ladung in PV / Netz | optional |
+
+Fehlt eine Entity, ist sie `unavailable` oder gibt es keine Statistik, blendet die Karte den Wert oder Abschnitt aus
+bzw. zeigt „–“ – sie bricht nie komplett.
+
+### Woher die Zahlen kommen
+
+- **Live** aus den Zuständen der Leistungssensoren. Netz: + Bezug / − Einspeisung (oder zwei getrennte Sensoren),
+  Akku: + laden / − entladen. Fehlt ein Hausverbrauch-Sensor, rechnet die Karte PV + Bezug − Einspeisung + Entladung − Ladung.
+- **Tag / Woche / Monat** aus der Langzeit-Statistik (`recorder/statistics_during_period`, stündlich bzw. täglich),
+  standardmäßig mit den Quellen des Energie-Dashboards. Jede Quelle lässt sich per `*_stat` überschreiben – auch
+  täglich zurückgesetzte `utility_meter` funktionieren. Die Tagesgrenzen folgen der **Zeitzone des Home-Assistant-Servers**;
+  Tage mit Zeitumstellung haben 23 bzw. 25 Stunden.
+- **Aufteilung** je Stunde bzw. Tag (alles ≥ 0):
+
+  ```
+  PV → Akku     = Akku geladen − Akku geladen aus Netz
+  PV → Haus     = Solar − Einspeisung − PV → Akku
+  Haus ← Akku   = Akku entladen
+  Haus ← Netz   = Verbrauch − PV → Haus − Haus ← Akku
+  Autarkie      = (PV → Haus + Haus ← Akku) / Verbrauch
+  Eigenverbrauch = (Solar − Einspeisung) / Solar
+  CO₂ gespart   = (Solar − Einspeisung) × co2_factor
+  ```
+
+  Ohne `consumption_stat` wird der Verbrauch hochgerechnet: Solar + Bezug − Einspeisung + Entladung − Ladung.
+- **Leistungsdiagramm** aus der History des Tages, gemittelt auf 5 oder 15 Minuten; ist der Tag älter als die
+  Recorder-Aufbewahrung, aus der 5-Minuten- bzw. Stunden-Statistik.
+- **Prognose** (nur heute) über `energy/solar_forecast` aus den Prognose-Einträgen des Energie-Dashboards.
+- **Nachtbereiche** heute aus `sun.sun`, für andere Tage aus dem Standort von Home Assistant berechnet.
+- Abfragen werden zwischengespeichert: vergangene Zeiträume nur einmal, der aktuelle alle 5 Minuten bzw. zur vollen Stunde.
 
 ### Installation
 
-Über HACS als **benutzerdefiniertes Repository** (Kategorie *Dashboard*):
-`https://github.com/hoentaex/ha-energy-overview-card` – danach die Karte im Dashboard über
-**Karte hinzufügen → Energy Overview Card** einfügen.
+**Über den Marketplace (HACS):**
+
+[![Repository im Marketplace öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=hoentaex&repository=ha-energy-overview-card&category=plugin)
+
+oder von Hand: **Marketplace → ⋮ → Benutzerdefinierte Repositories** → `https://github.com/hoentaex/ha-energy-overview-card`,
+Typ **Dashboard** → *Energy Overview Card* installieren → Browser neu laden.
+
+**Manuell:** `ha-energy-overview-card.js` aus dem [letzten Release](https://github.com/hoentaex/ha-energy-overview-card/releases/latest)
+nach `/config/www/` kopieren, unter **Einstellungen → Dashboards → ⋮ → Ressourcen** `/local/ha-energy-overview-card.js`
+als **JavaScript-Modul** eintragen, Browser neu laden.
+
+### Konfiguration
+
+Minimal – alles kommt aus dem Energie-Dashboard:
+
+```yaml
+type: custom:energy-overview-card
+```
+
+Vollständig (Beispiel mit Balkonkraftwerk und Anker Solarbank 2 E1600 AC):
+
+```yaml
+type: custom:energy-overview-card
+name: Energie
+subtitle: Balkonkraftwerk · Solarbank 2 E1600 AC
+solar_power_entity: sensor.pv_power_from_solar
+grid_power_entity: sensor.netzleistung_kombiniert
+battery_power_entity: sensor.solarbank_2_e1600_ac_akkuleistung
+house_power_entity: sensor.stromverbrauch_gesamt_real
+soc_entity: sensor.pv_batterie_soc
+capacity_kwh: 1.6
+consumption_stat: sensor.stromverbrauch_gesamt_real_daily
+battery_grid_charge_stat: sensor.akkuladung_von_netz_energy_daily
+forecast_today_entity: sensor.energy_production_today
+```
+
+**Live-Werte**
+
+| Option | Bedeutung | Standard |
+|---|---|---|
+| `solar_power_entity` | PV-Leistung (W / kW) | Leistungssensor aus dem Energie-Dashboard |
+| `grid_power_entity` | Netzleistung, + Bezug / − Einspeisung | Energie-Dashboard |
+| `invert_grid` | Vorzeichen der Netzleistung umdrehen | `false` |
+| `grid_import_power_entity` / `grid_export_power_entity` | Bezug und Einspeisung als zwei Sensoren (statt `grid_power_entity`) | – |
+| `battery_power_entity` | Akkuleistung, + laden / − entladen | Energie-Dashboard (dort + entladen, wird umgedreht) |
+| `invert_battery` | Vorzeichen der Akkuleistung umdrehen | `false` |
+| `house_power_entity` | Hausverbrauch | berechnet |
+| `soc_entity` | Ladestand in % | – |
+| `capacity_entity` / `capacity_kwh` | Akkukapazität in kWh | – |
+
+**Statistik (Tag / Woche / Monat)** – leer = aus dem Energie-Dashboard; jeweils eine Statistik-ID oder eine Liste,
+die addiert wird:
+
+| Option | Bedeutung | Standard |
+|---|---|---|
+| `solar_stat` | Solar-Erzeugung | Solar `stat_energy_from` |
+| `grid_import_stat` / `grid_export_stat` | Netzbezug / Einspeisung | Netz `stat_energy_from` / `stat_energy_to` |
+| `battery_charge_stat` / `battery_discharge_stat` | Akku geladen / entladen | Akku `stat_energy_to` / `stat_energy_from` |
+| `battery_grid_charge_stat` | davon aus dem Netz geladen (ist in `battery_charge_stat` enthalten) | – (dann zählt alle Ladung als PV) |
+| `consumption_stat` | Hausverbrauch – wird der Hochrechnung vorgezogen | hochgerechnet |
+| `forecast_today_entity` | Tagessumme der PV-Prognose (kWh) | Summe aus `energy/solar_forecast` |
+
+**Darstellung**
+
+| Option | Bedeutung | Standard |
+|---|---|---|
+| `name`, `subtitle`, `icon` | Titel, Untertitel, Icon | „Energie“, –, Blitz |
+| `sections` | Reihenfolge / Auswahl: `header`, `flow`, `period`, `power`, `balance`, `history`, `footer` | alle |
+| `history_view` | Verlauf beim Öffnen: `consumption`, `solar`, `battery` | `consumption` |
+| `week_mode` | `calendar` (Mo–So) oder `rolling` (letzte 7 Tage) | `calendar` |
+| `power_resolution` | Raster des Leistungsdiagramms in Minuten: `5` oder `15` | `15` |
+| `threshold_w` | ab wie viel Watt ein Fluss als aktiv gilt (Linien, Status) | `10` |
+| `co2_factor` | kg CO₂ je kWh | `0.4` |
+| `animations` | Flussanimation (respektiert `prefers-reduced-motion`) | `true` |
+| `animate_by_power` | Animationstempo nach Leistung | `true` |
+| `popup` | nur Mini-Karte: Hauptkarte als Dialog (`false` = darunter aufklappen) | `true` |
+| `language` | `de` / `en` | Sprache von Home Assistant |
+
+**Farben** lassen sich per Theme oder `card_mod` über CSS-Variablen ändern: `--eoc-pv-color` (#f5b942),
+`--eoc-battery-color` (#5fd08a), `--eoc-import-color` (#ff9a5c), `--eoc-export-color` (#5aa9ff),
+`--eoc-house-color` (#cba6f7), `--eoc-forecast-color` (#94e2d5), `--eoc-night-color` (rgba(180,190,254,.11)),
+`--eoc-night-icon-color` (#b4befe), `--eoc-accent-color` (Standard: `--primary-color`). Alles andere kommt aus dem Theme.
+
+### Verlauf
+
+| Verbrauch | Solar | Akku |
+|---|---|---|
+| <img src="screenshots/history-day-consumption-dark.png" alt="Verbrauch mit Nachtbereichen" width="260"> | <img src="screenshots/history-day-solar-dark.png" alt="Solar mit Prognose" width="260"> | <img src="screenshots/history-day-battery-light.png" alt="Akku mit Ladestand-Linie" width="260"> |
+| aus Solar / Akku / Netz, nachts mit Mond | ins Haus / in den Akku / Einspeisung, heute mit Prognose | Ladung oben (PV / Netz), Entladung unten, Ladestand |
+
+Jede Säule ist ein Button: Hover, Fokus oder Antippen zeigt die Werte in der Zeile darüber. In der Wochenansicht
+stehen die Werte über (und beim Akku die Entladung unter) den Säulen; im Monat sind künftige Tage blasse Platzhalter.
+
+### Mini-Karte
+
+`custom:energy-overview-mini-card` zeigt eine Zeile: Ladestand-Ring, Name, Status, PV- und Netzleistung und die
+Autarkie von heute. Der Button rechts öffnet die Hauptkarte als Dialog (Escape oder Klick daneben schließt ihn);
+mit `popup: false` klappt sie stattdessen darunter auf. Sie nimmt dieselben Optionen wie die Hauptkarte.
+
+```yaml
+type: custom:energy-overview-mini-card
+name: Energie
+# … dieselben Optionen wie die Hauptkarte
+```
+
+| Mini-Karte | Dialog |
+|---|---|
+| <img src="screenshots/mini-light.png" alt="Mini-Karte" width="420"><br><img src="screenshots/mini-dark.png" alt="Mini-Karte, dunkel" width="420"> | <img src="screenshots/popup-dark.png" alt="Hauptkarte als Dialog" width="300"> |
+
+### Visueller Editor
+
+Beide Karten lassen sich komplett im visuellen Editor einrichten: Entity-Auswahl für die Live-Werte, Statistik-Auswahl
+für die Zeiträume (leer = aus dem Energie-Dashboard), Abschnitte, Darstellung und ein Bereich **Erweitert**.
+Optionen mit Standardwert landen nicht im YAML. Eine neue Karte übernimmt die Leistungssensoren aus dem
+Energie-Dashboard und sucht selbst einen Ladestand-Sensor und die Tagesprognose.
 
 ---
 
 ## English
 
-Lovelace card for a **PV system with a home battery**: live energy flow, balance and history
+A Lovelace card for a **PV system with a home battery**: live energy flow, balance and history
 (day / week / month) in **one** card.
-
-At a glance: where power comes from right now, where it goes, how full the battery is – and for a selectable period:
-how much was consumed and produced, where consumption came from, where production went, how self-sufficient the
-house was.
 
 > [!WARNING]
 > **This is a private hobby project**, built for my own installation and maintained in spare time. It comes without
 > any warranty or support: **use it at your own risk.** The card only reads states and statistics from Home Assistant –
 > it does not switch anything.
 
-**Data sources:** live entities and Home Assistant's long-term statistics – by default the sources of the
-**Energy dashboard**, each one can be overridden. **Not included:** control logic, costs and tariffs.
+**What it shows:** the live flow between solar, grid, home and battery with a status pill; for a day, week or month
+(page back without limit) the balance of consumption (from solar / battery / grid) and production (to home / battery /
+export), self-sufficiency, self-consumption and CO₂ saved; the day's power chart with a crosshair; and a history of
+consumption (with night blocks), solar (with today's forecast) and battery (charge up, discharge down, state-of-charge
+line). **Not included:** control logic, costs and tariffs.
 
-**Installation:** add `https://github.com/hoentaex/ha-energy-overview-card` to HACS as a **custom repository**
-(category *Dashboard*), then add **Energy Overview Card** from the card picker.
+**You need:** Home Assistant 2024.8+ and the **Energy dashboard** set up (or your own energy sensors with statistics).
+Power sensors, a state-of-charge sensor and the battery capacity are recommended; without power sensors the card uses
+the ones from the Energy dashboard. Anything missing or unavailable is hidden or shown as "–".
+
+**Where the numbers come from:** live values from the power sensors (grid + import / − export, battery + charging /
+− discharging); periods from the long-term statistics with the Energy dashboard's sources, each overridable through a
+`*_stat` option; day boundaries follow the **Home Assistant server's time zone** (23 / 25 hours on the days the clocks
+change). The split per hour or day is the formula block above; without `consumption_stat` consumption is estimated
+as solar + import − export + discharge − charge. The power chart uses the day's history (5-minute or hourly statistics
+once it is older than the recorder keeps), the forecast `energy/solar_forecast`, the night blocks `sun.sun` and the
+home location.
+
+**Install** through the Marketplace (HACS) as a custom repository of type *Dashboard*, or copy
+`ha-energy-overview-card.js` from the latest release to `/config/www/` and add it as a JavaScript module resource.
+
+**Configure** with the options in the tables above (all names are the same in English). Minimal config:
+
+```yaml
+type: custom:energy-overview-card
+```
+
+**Mini card:** `custom:energy-overview-mini-card` takes the same options and shows one row (ring, name, status, PV,
+grid, today's self-sufficiency); its button opens the main card as a dialog (`popup: false` expands it below instead).
+
+**Visual editor:** both cards can be set up entirely in the UI editor; new cards take the power sensors from the
+Energy dashboard and find a state-of-charge sensor and today's forecast by themselves.
 
 ## Development
 
 ```bash
 npm install
-npm run check        # lint + build + syntax check
+npm run check        # Biome lint, build, syntax check
 npm test             # unit tests (node:test)
-npm run demo         # http://127.0.0.1:8769/demo/ with a fake hass
+npm run demo         # demo page with a simulated installation on http://127.0.0.1:8769/demo/
 npm run screenshots  # README screenshots (Playwright)
 ```
+
+Releases: bump `version` in `package.json`, add its `CHANGELOG.md` section, push a tag `vX.Y.Z`.
 
 ## License
 

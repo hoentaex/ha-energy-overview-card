@@ -20,6 +20,7 @@ import {
 import { deriveStatus, forecastEntries, prefsLive, readLive } from "./energy.js";
 import { canGoForward, isCurrent, periodRange, shiftAnchor } from "./period.js";
 import { socColor } from "./flow.js";
+import { detectConfig, EnergyOverviewCardEditor, EnergyOverviewMiniCardEditor } from "./editor.js";
 import "./popup.js";
 import { defaultSel, historyReadout, historyUnits, powerTitle, RENDERERS, statusPill } from "./sections.js";
 import { DEFAULTS, esc, fmtPower, HISTORY_MODES, langOf, SECTIONS, translator } from "./shared.js";
@@ -47,6 +48,16 @@ export class EnergyOverviewCard extends HTMLElement {
     this._data = {};
     this._token = 0;
     this._bound = false;
+  }
+
+  static getConfigElement() {
+    return document.createElement("energy-overview-card-editor");
+  }
+
+  /** New cards: live sensors, SoC and forecast from the Energy dashboard and the states. */
+  static async getStubConfig(hass) {
+    const prefs = hass?.callWS ? await hass.callWS({ type: "energy/get_prefs" }).catch(() => null) : null;
+    return { type: "custom:energy-overview-card", ...detectConfig(hass, prefs) };
   }
 
   setConfig(config) {
@@ -157,7 +168,7 @@ export class EnergyOverviewCard extends HTMLElement {
   _context() {
     const hass = this._hass;
     const config = this._config;
-    const lang = langOf(hass);
+    const lang = langOf(hass, config);
     const t = translator(lang);
     const tz = this._tz;
     const now = new Date();
@@ -371,6 +382,14 @@ const collapseIcon =
  * as a dialog (`popup: true`, default) or expands it below the row (`popup: false`).
  */
 export class EnergyOverviewMiniCard extends HTMLElement {
+  static getConfigElement() {
+    return document.createElement("energy-overview-mini-card-editor");
+  }
+
+  static async getStubConfig(hass) {
+    return { ...(await EnergyOverviewCard.getStubConfig(hass)), type: "custom:energy-overview-mini-card" };
+  }
+
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -448,7 +467,7 @@ export class EnergyOverviewMiniCard extends HTMLElement {
 
   _render() {
     if (!this._config || !this._hass) return;
-    const lang = langOf(this._hass);
+    const lang = langOf(this._hass, this._config);
     const t = translator(lang);
     const live = readLive(this._hass, this._config, this._live);
     const th = Number(this._config.threshold_w) || 0;
@@ -496,7 +515,7 @@ export class EnergyOverviewMiniCard extends HTMLElement {
   }
 
   _open(opener) {
-    const t = translator(langOf(this._hass));
+    const t = translator(langOf(this._hass, this._config));
     if (this._config.popup === false) {
       this._expanded = !this._expanded;
       const box = this.shadowRoot.querySelector("[data-inline]");
@@ -521,6 +540,11 @@ export class EnergyOverviewMiniCard extends HTMLElement {
 if (!customElements.get("energy-overview-card")) customElements.define("energy-overview-card", EnergyOverviewCard);
 if (!customElements.get("energy-overview-mini-card"))
   customElements.define("energy-overview-mini-card", EnergyOverviewMiniCard);
+
+if (!customElements.get("energy-overview-card-editor"))
+  customElements.define("energy-overview-card-editor", EnergyOverviewCardEditor);
+if (!customElements.get("energy-overview-mini-card-editor"))
+  customElements.define("energy-overview-mini-card-editor", EnergyOverviewMiniCardEditor);
 
 window.customCards = window.customCards || [];
 for (const card of [

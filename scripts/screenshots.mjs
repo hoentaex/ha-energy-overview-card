@@ -44,7 +44,7 @@ try {
       await settle(card, kind);
       await card.screenshot({ path: shot(`card-${kind}-${theme}`) });
       console.log(`saved screenshots/card-${kind}-${theme}.png`);
-      for (const mode of ["solar", "battery"]) {
+      for (const mode of ["consumption", "solar", "battery"]) {
         await card.locator(`[data-act="mode"][data-v="${mode}"]`).click();
         await page.waitForTimeout(150);
         await card.locator('[data-sec="history"] .tile').screenshot({ path: shot(`history-${kind}-${mode}-${theme}`) });

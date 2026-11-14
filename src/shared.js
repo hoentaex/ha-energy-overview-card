@@ -173,8 +173,9 @@ const STRINGS = {
   },
 };
 
-export const langOf = (hass) => {
-  const lang = String(hass?.locale?.language || hass?.language || "en").slice(0, 2);
+/** Card language: the `language` option, else Home Assistant's, else English. */
+export const langOf = (hass, config) => {
+  const lang = String(config?.language || hass?.locale?.language || hass?.language || "en").slice(0, 2);
   return lang in STRINGS ? lang : "en";
 };
 
