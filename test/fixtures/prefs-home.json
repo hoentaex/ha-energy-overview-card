@@ -1,0 +1,23 @@
+{
+  "energy_sources": [
+    {
+      "type": "grid",
+      "stat_energy_from": "sensor.stromverbrauch_berechnung_neu",
+      "stat_energy_to": "sensor.einspeisung_berechnung",
+      "stat_rate": "sensor.netzleistung_kombiniert"
+    },
+    {
+      "type": "battery",
+      "stat_energy_from": "sensor.pv_discharge_battery_energy",
+      "stat_energy_to": "sensor.pv_charge_battery_energy",
+      "stat_rate": "sensor.solarbank_2_e1600_ac_akkuleistung_inverted"
+    },
+    {
+      "type": "solar",
+      "stat_energy_from": "sensor.pv_power_from_solar_energy",
+      "config_entry_solar_forecast": ["27b30f56a98428a56f1c046ba9755737"],
+      "stat_rate": "sensor.pv_power_from_solar"
+    }
+  ],
+  "device_consumption": []
+}
