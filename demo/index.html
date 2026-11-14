@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Energy Overview Card – Demo</title>
+    <style>
+      .light {
+        --primary-text-color: #4c4f69; --secondary-text-color: #6c6f85; --card-background-color: #eff1f5; --ha-card-background: #eff1f5;
+        --secondary-background-color: #e6e9ef; --divider-color: #ccd0da; --primary-color: #1e66f5; background: #dce0e8;
+      }
+      .dark {
+        --primary-text-color: #cdd6f4; --secondary-text-color: #a6adc8; --card-background-color: #1e1e2e; --ha-card-background: #1e1e2e;
+        --secondary-background-color: #313244; --divider-color: #45475a; --primary-color: #89b4fa; background: #11111b;
+      }
+      body { margin: 0; font-family: Roboto, Inter, system-ui, sans-serif; }
+      ha-card { display: block; background: var(--ha-card-background); border-radius: 12px; border: 1px solid var(--divider-color); }
+      .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .col { padding: 20px; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+      .col > * { width: min(100%, 420px); }
+      @media (max-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+    </style>
+  </head>
+  <body>
+    <div class="cols">
+      <div class="col light" id="light"></div>
+      <div class="col dark" id="dark"></div>
+    </div>
+    <script type="module">
+      import "../dist/ha-energy-overview-card.js";
+
+      const lang = new URLSearchParams(location.search).get("lang") || "de";
+      const hass = { locale: { language: lang }, states: {}, config: { latitude: 49.9, longitude: 10.9 } };
+      for (const col of ["light", "dark"]) {
+        for (const type of ["energy-overview-card", "energy-overview-mini-card"]) {
+          const card = document.createElement(type);
+          card.setConfig({ type: `custom:${type}` });
+          card.hass = hass;
+          document.getElementById(col).append(card);
+        }
+      }
+    </script>
+  </body>
+</html>
