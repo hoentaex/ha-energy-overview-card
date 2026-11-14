@@ -1,4 +1,3 @@
-// Runs with TZ=Europe/Berlin (see package.json).
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -15,10 +14,11 @@ import {
   toSlots,
 } from "../src/data.js";
 import { periodRange } from "../src/period.js";
+import { berlin, TZ } from "./helpers.mjs";
 
 const prefs = JSON.parse(readFileSync(new URL("./fixtures/prefs-home.json", import.meta.url)));
 const close = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} ≈ ${b}`);
-const t = (s) => new Date(s).getTime();
+const t = (s) => berlin(s).getTime();
 const NOW = t("2026-11-14T13:20");
 
 /** Fake hass whose callWS answers by message type and records the calls. */
@@ -39,8 +39,8 @@ const fakeHass = (handlers, extra = {}) => {
 const row = (start, change) => ({ start: t(start), end: t(start) + 3600e3, change });
 
 test("expiry: past periods never, the current one after 5 min or at the full hour", () => {
-  const day = periodRange("day", new Date(NOW));
-  assert.equal(expiryFor(periodRange("day", new Date("2026-11-13")), NOW), Number.POSITIVE_INFINITY);
+  const day = periodRange("day", new Date(NOW), { tz: TZ });
+  assert.equal(expiryFor(periodRange("day", berlin("2026-11-13"), { tz: TZ }), NOW), Number.POSITIVE_INFINITY);
   assert.equal(expiryFor(day, NOW), NOW + 5 * 60e3);
   assert.equal(expiryFor(day, t("2026-11-14T13:58")), t("2026-11-14T14:00"));
 });
@@ -59,7 +59,7 @@ test("cache shares in-flight requests, keeps until expiry, drops failures", asyn
 });
 
 test("toSlots matches rows by time (ms or ISO), sums, leaves gaps null", () => {
-  const range = periodRange("day", new Date(NOW));
+  const range = periodRange("day", new Date(NOW), { tz: TZ });
   const out = toSlots(
     [row("2026-11-14T00:00", 0.2), { start: "2026-11-14T01:00:00+01:00", change: 0.3 }, row("2026-11-14T03:00", null)],
     range.slots,
@@ -71,7 +71,7 @@ test("toSlots matches rows by time (ms or ISO), sums, leaves gaps null", () => {
 });
 
 test("period energy of 14.11. from the statistics: one request, summed split, overrides", async () => {
-  const range = periodRange("day", new Date(NOW));
+  const range = periodRange("day", new Date(NOW), { tz: TZ });
   const res = {
     "sensor.pv_power_from_solar_energy": [row("2026-11-14T11:00", 2.51), row("2026-11-14T12:00", 2.0)],
     "sensor.einspeisung_berechnung": [row("2026-11-14T12:00", 1.92)],
@@ -113,17 +113,17 @@ test("period energy of 14.11. from the statistics: one request, summed split, ov
 
 test("period energy without any source does not call the websocket", async () => {
   const hass = fakeHass({});
-  const e = await fetchPeriodEnergy(hass, new Cache(), {}, null, periodRange("week", new Date(NOW)), NOW);
+  const e = await fetchPeriodEnergy(hass, new Cache(), {}, null, periodRange("week", new Date(NOW), { tz: TZ }), NOW);
   assert.equal(hass.calls.length, 0);
   assert.equal(e.hasData, false);
   assert.equal(e.total.autarky, null);
 });
 
 test("resample: time-weighted mean, null after now and in gaps", () => {
-  const range = periodRange("day", new Date(NOW));
+  const range = periodRange("day", new Date(NOW), { tz: TZ });
   const cells = grid(range, 15);
   assert.equal(cells.length, 96);
-  assert.equal(grid(periodRange("day", new Date("2026-10-25T12:00")), 15).length, 100);
+  assert.equal(grid(periodRange("day", berlin("2026-10-25T12:00"), { tz: TZ }), 15).length, 100);
   const pts = [
     { t: t("2026-11-14T00:00"), v: 100 },
     { t: t("2026-11-14T00:05"), v: 400 },
@@ -155,7 +155,7 @@ test("history points from the compressed format, kW converted", () => {
 });
 
 test("power day: history first, then 5-minute statistics for entities without history", async () => {
-  const range = periodRange("day", new Date("2026-11-10T12:00"));
+  const range = periodRange("day", berlin("2026-11-10T12:00"), { tz: TZ });
   const hass = fakeHass(
     {
       "history/history_during_period": {
@@ -185,7 +185,7 @@ test("power day: history first, then 5-minute statistics for entities without hi
 });
 
 test("forecast: hourly kWh for today's slots, only configured entries", async () => {
-  const range = periodRange("day", new Date(NOW));
+  const range = periodRange("day", new Date(NOW), { tz: TZ });
   const res = {
     "27b30f56a98428a56f1c046ba9755737": {
       wh_hours: {

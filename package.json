@@ -8,7 +8,7 @@
     "build": "node scripts/build.mjs",
     "lint": "biome check src test scripts",
     "check": "biome check src test scripts && node scripts/build.mjs && node --check dist/ha-energy-overview-card.js",
-    "test": "TZ=Europe/Berlin node --test test/*.test.mjs",
+    "test": "TZ=America/New_York node --test test/*.test.mjs",
     "demo": "node scripts/build.mjs && node scripts/serve.mjs",
     "screenshots": "node scripts/build.mjs && node scripts/screenshots.mjs"
   },

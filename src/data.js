@@ -127,12 +127,14 @@ export const grid = (range, stepMin) => {
  */
 export function resample(points, cells, stepMin, until = Number.POSITIVE_INFINITY) {
   const step = stepMin * MIN;
+  let first = 0;
   return cells.map((c0) => {
     const c1 = Math.min(c0 + step, until);
     if (c1 <= c0) return null;
+    while (first + 1 < points.length && points[first + 1].t <= c0) first++;
     let area = 0;
     let covered = 0;
-    for (let i = 0; i < points.length; i++) {
+    for (let i = first; i < points.length && points[i].t < c1; i++) {
       const p = points[i];
       if (p.v === null) continue;
       const a = Math.max(p.t, c0);
@@ -229,4 +231,57 @@ export async function fetchForecast(hass, cache, range, entries, now = Date.now(
   if (!entries?.length) return null;
   const res = await cache.get("forecast", now + 30 * MIN, () => hass.callWS(forecastRequest())).catch(() => null);
   return forecastSlots(res, range, entries);
+}
+
+/**
+ * Live entities used by the power chart, from the config with the prefs' `stat_rate` entities as fallback.
+ * Returns { ids, map } where map tells which entity feeds which chart series.
+ */
+export function powerEntities(config, live = {}) {
+  const c = { ...live, ...config };
+  const map = {
+    solar: c.solar_power_entity,
+    grid: config.grid_import_power_entity || config.grid_export_power_entity ? null : c.grid_power_entity,
+    grid_import: config.grid_import_power_entity,
+    grid_export: config.grid_export_power_entity,
+    battery: c.battery_power_entity,
+    house: c.house_power_entity,
+    soc: c.soc_entity,
+  };
+  for (const k of Object.keys(map)) if (!map[k]) delete map[k];
+  return { ids: [...new Set(Object.values(map))], map };
+}
+
+/**
+ * Chart series (W, soc in %) from the resampled entity series: grid split into import / export, home from its
+ * own entity or PV + import − export + discharge − charge. Signs as in readLive.
+ */
+export function powerSeries(raw, map, config, live = {}) {
+  const n = raw.cells.length;
+  const get = (k) => (map[k] ? raw.series[map[k]] : undefined) || null;
+  const pos = (v) => (Number.isFinite(v) ? Math.max(0, v) : v);
+  const neg = (v) => (Number.isFinite(v) ? Math.max(0, -v) : v);
+  const out = { pv: get("solar"), soc: get("soc"), house: get("house") };
+  const g = get("grid");
+  if (g) {
+    const sg = config.invert_grid ? -1 : 1;
+    out.grid_import = g.map((v) => (Number.isFinite(v) ? pos(v * sg) : null));
+    out.grid_export = g.map((v) => (Number.isFinite(v) ? neg(v * sg) : null));
+  } else {
+    out.grid_import = get("grid_import");
+    out.grid_export = get("grid_export");
+  }
+  const b = get("battery");
+  const sb = (config.invert_battery ? -1 : 1) * (config.battery_power_entity ? 1 : live.battery_sign || 1);
+  if (!out.house && (out.pv || out.grid_import)) {
+    const at = (arr, i) => (arr && Number.isFinite(arr[i]) ? arr[i] : 0);
+    out.house = Array.from({ length: n }, (_, i) => {
+      const any = [out.pv, out.grid_import, out.grid_export, b].some((a) => a && Number.isFinite(a[i]));
+      if (!any) return null;
+      const bat = b && Number.isFinite(b[i]) ? b[i] * sb : 0;
+      return Math.max(0, at(out.pv, i) + at(out.grid_import, i) - at(out.grid_export, i) - bat);
+    });
+  }
+  for (const k of Object.keys(out)) if (!out[k]) delete out[k];
+  return out;
 }

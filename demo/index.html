@@ -5,40 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Energy Overview Card – Demo</title>
     <style>
+      /* Catppuccin Latte / Mocha, as the author's HA themes */
       .light {
-        --primary-text-color: #4c4f69; --secondary-text-color: #6c6f85; --card-background-color: #eff1f5; --ha-card-background: #eff1f5;
-        --secondary-background-color: #e6e9ef; --divider-color: #ccd0da; --primary-color: #1e66f5; background: #dce0e8;
+        --primary-text-color: #4c4f69; --secondary-text-color: #5c5f77; --card-background-color: #eff1f5; --ha-card-background: #eff1f5;
+        --secondary-background-color: #e6e9ef; --divider-color: #ccd0da; --primary-color: #8839ef; --text-primary-color: #eff1f5;
+        background: #dce0e8;
       }
       .dark {
         --primary-text-color: #cdd6f4; --secondary-text-color: #a6adc8; --card-background-color: #1e1e2e; --ha-card-background: #1e1e2e;
-        --secondary-background-color: #313244; --divider-color: #45475a; --primary-color: #89b4fa; background: #11111b;
+        --secondary-background-color: #181825; --divider-color: #313244; --primary-color: #cba6f7; --text-primary-color: #1e1e2e;
+        background: #11111b;
       }
       body { margin: 0; font-family: Roboto, Inter, system-ui, sans-serif; }
-      ha-card { display: block; background: var(--ha-card-background); border-radius: 12px; border: 1px solid var(--divider-color); }
+      ha-card { display: block; background: var(--ha-card-background); border-radius: 16px; border: 1px solid var(--divider-color); box-sizing: border-box; }
+      .bar { padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 14px; background: #fff; border-bottom: 1px solid #ddd; }
       .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .col { padding: 20px; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+      .col { padding: 20px; color: var(--primary-text-color); display: flex; flex-direction: column; gap: 16px; align-items: center; }
       .col > * { width: min(100%, 420px); }
       @media (max-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr); } }
     </style>
   </head>
   <body>
+    <div class="bar">
+      <label>Szenario
+        <select id="scenario">
+          <option value="sim">Simulation (jetzt)</option><option value="night">Netz versorgt Haus</option>
+          <option value="noon">PV-Überschuss</option><option value="evening">Akku versorgt Haus</option>
+          <option value="gridcharge">Netzladung</option>
+        </select>
+      </label>
+      <label>Sprache <select id="lang"><option>de</option><option>en</option></select></label>
+      <label><input type="checkbox" id="minimal" /> nur Energie-Dashboard (keine Optionen)</label>
+    </div>
     <div class="cols">
       <div class="col light" id="light"></div>
       <div class="col dark" id="dark"></div>
     </div>
     <script type="module">
       import "../dist/ha-energy-overview-card.js";
+      import { CONFIG, makeHass } from "./mock.js";
 
-      const lang = new URLSearchParams(location.search).get("lang") || "de";
-      const hass = { locale: { language: lang }, states: {}, config: { latitude: 49.9, longitude: 10.9 } };
-      for (const col of ["light", "dark"]) {
-        for (const type of ["energy-overview-card", "energy-overview-mini-card"]) {
-          const card = document.createElement(type);
-          card.setConfig({ type: `custom:${type}` });
-          card.hass = hass;
-          document.getElementById(col).append(card);
+      const q = new URLSearchParams(location.search);
+      const ui = { scenario: document.getElementById("scenario"), lang: document.getElementById("lang"), minimal: document.getElementById("minimal") };
+      ui.scenario.value = q.get("scenario") || "sim";
+      ui.lang.value = q.get("lang") || "de";
+      ui.minimal.checked = q.get("minimal") === "1";
+
+      const cards = [];
+      const build = () => {
+        cards.length = 0;
+        for (const col of ["light", "dark"]) {
+          const el = document.getElementById(col);
+          el.replaceChildren();
+          for (const type of ["energy-overview-card", "energy-overview-mini-card"]) {
+            const card = document.createElement(type);
+            const config = ui.minimal.checked ? {} : CONFIG;
+            card.setConfig({ type: `custom:${type}`, ...config, ...(q.get("view") ? { history_view: q.get("view") } : {}) });
+            el.append(card);
+            cards.push(card);
+          }
         }
-      }
+        update();
+      };
+      const update = () => {
+        const hass = makeHass({ lang: ui.lang.value, scenario: ui.scenario.value });
+        for (const c of cards) c.hass = hass;
+      };
+      ui.scenario.addEventListener("change", update);
+      ui.lang.addEventListener("change", build);
+      ui.minimal.addEventListener("change", build);
+      build();
+      window.__demo = { update, build };
     </script>
   </body>
 </html>

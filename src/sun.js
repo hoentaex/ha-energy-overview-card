@@ -1,6 +1,8 @@
 // Sunrise / sunset for any day (after the well-known SunCalc formulas, ~1 min accuracy) and the night
 // blocks of a day for the history chart. Today prefers sun.sun's next_rising / next_setting.
 
+import { parts, zoned } from "./tz.js";
+
 const rad = Math.PI / 180;
 const DAY = 864e5;
 const J1970 = 2440588;
@@ -12,11 +14,12 @@ const toDays = (t) => t / DAY - 0.5 + J1970 - J2000;
 const fromJulian = (j) => new Date((j + 0.5 - J1970) * DAY);
 
 /**
- * Sunrise and sunset of the local calendar day of `date`.
+ * Sunrise and sunset of the calendar day of `date` in `tz` (undefined: browser time).
  * { rise, set } as Dates, or { rise: null, set: null, polar: "day" | "night" } when the sun does not cross the horizon.
  */
-export function sunTimes(date, lat, lon) {
-  const noon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12).getTime();
+export function sunTimes(date, lat, lon, tz) {
+  const p = parts(date.getTime(), tz);
+  const noon = zoned(p.y, p.m, p.d, 12, tz).getTime();
   const lw = rad * -lon;
   const phi = rad * lat;
   const n = Math.round(toDays(noon) - J0 - lw / (2 * Math.PI));
@@ -43,7 +46,7 @@ const within = (iso, range) => {
 export function daySun(hass, range) {
   const lat = Number(hass?.config?.latitude);
   const lon = Number(hass?.config?.longitude);
-  const calc = Number.isFinite(lat) && Number.isFinite(lon) ? sunTimes(range.start, lat, lon) : null;
+  const calc = Number.isFinite(lat) && Number.isFinite(lon) ? sunTimes(range.start, lat, lon, range.tz) : null;
   const sun = hass?.states?.["sun.sun"]?.attributes;
   const rise = within(sun?.next_rising, range) ?? calc?.rise ?? null;
   const set = within(sun?.next_setting, range) ?? calc?.set ?? null;
