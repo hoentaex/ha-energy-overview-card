@@ -52,6 +52,18 @@ try {
       }
       await card.locator('[data-act="mode"][data-v="consumption"]').click();
     }
+    const mini = page.locator(`#${theme} energy-overview-mini-card`).first();
+    await mini.locator(".mini").waitFor();
+    await page.waitForTimeout(300);
+    await mini.screenshot({ path: shot(`mini-${theme}`) });
+    console.log(`saved screenshots/mini-${theme}.png`);
+    await page.setViewportSize({ width: 760, height: 2600 });
+    await mini.locator("[data-open]").click();
+    const dialog = page.locator("energy-overview-dialog energy-overview-card");
+    await dialog.locator(".cols").waitFor();
+    await page.waitForTimeout(300);
+    await dialog.screenshot({ path: shot(`popup-${theme}`) });
+    console.log(`saved screenshots/popup-${theme}.png`);
     await page.close();
   }
 } finally {

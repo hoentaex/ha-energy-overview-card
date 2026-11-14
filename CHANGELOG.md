@@ -17,3 +17,8 @@
   rings; history with consumption / solar / battery views, night blocks, today's forecast and the battery
   view diverging around a zero line with the state-of-charge line; footer tiles and PV actual / forecast
 - Demo page with a simulated installation, screenshots of all periods and history views in light and dark
+- Mini card: state-of-charge ring, name, status, PV and grid now, today's self-sufficiency; the button opens the
+  main card as a dialog (`popup: true`, default; Escape, backdrop and close button close it, focus returns) or
+  expands it below the row (`popup: false`)
+- Status pill follows the dominant source (battery 380 W with 30 W from the grid reads "battery supplies home")
+- Keyboard focus stays on the control across re-renders

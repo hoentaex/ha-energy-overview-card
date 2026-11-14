@@ -19,8 +19,10 @@ import {
 } from "./data.js";
 import { deriveStatus, forecastEntries, prefsLive, readLive } from "./energy.js";
 import { canGoForward, isCurrent, periodRange, shiftAnchor } from "./period.js";
-import { defaultSel, historyReadout, historyUnits, powerTitle, RENDERERS } from "./sections.js";
-import { DEFAULTS, esc, HISTORY_MODES, langOf, SECTIONS, translator } from "./shared.js";
+import { socColor } from "./flow.js";
+import "./popup.js";
+import { defaultSel, historyReadout, historyUnits, powerTitle, RENDERERS, statusPill } from "./sections.js";
+import { DEFAULTS, esc, fmtPower, HISTORY_MODES, langOf, SECTIONS, translator } from "./shared.js";
 import { STYLE } from "./styles.js";
 import { daySun } from "./sun.js";
 import { tzOf } from "./tz.js";
@@ -208,9 +210,21 @@ export class EnergyOverviewCard extends HTMLElement {
     const body = this._config.sections
       .map((s) => `<div class="sec" data-sec="${s}">${RENDERERS[s](ctx)}</div>`)
       .join("");
+    const focus = this._focusKey();
     this.shadowRoot.innerHTML = `<style>${STYLE}.sec{display:contents}</style><ha-card>${body}</ha-card>`;
+    if (focus) this.shadowRoot.querySelector(focus)?.focus();
     this._liveSig = this._liveSignature();
     this._bind();
+  }
+
+  /** Selector of the focused control, so keyboard focus survives a re-render. */
+  _focusKey() {
+    const el = this.shadowRoot.activeElement;
+    if (!el?.dataset) return null;
+    if (el.dataset.close !== undefined) return "[data-close]";
+    if (el.dataset.col !== undefined) return `[data-col="${el.dataset.col}"]`;
+    if (el.dataset.act) return `[data-act="${el.dataset.act}"]${el.dataset.v ? `[data-v="${el.dataset.v}"]` : ""}`;
+    return null;
   }
 
   _liveSignature() {
@@ -227,10 +241,12 @@ export class EnergyOverviewCard extends HTMLElement {
   _renderLive() {
     if (!this.shadowRoot.firstChild || !this._config) return;
     const ctx = this._context();
+    const focus = this._focusKey();
     for (const s of ["header", "flow"]) {
       const el = this.shadowRoot.querySelector(`[data-sec="${s}"]`);
       if (el) el.innerHTML = RENDERERS[s](ctx);
     }
+    if (focus === "[data-close]") this.shadowRoot.querySelector(focus)?.focus();
     this._liveSig = this._liveSignature();
   }
 
@@ -254,6 +270,10 @@ export class EnergyOverviewCard extends HTMLElement {
   _onClick(e) {
     const col = e.target.closest?.("[data-col]");
     if (col) return this._pickCol(e);
+    if (e.target.closest?.("[data-close]")) {
+      this.dispatchEvent(new CustomEvent("eoc-close", { bubbles: true, composed: true }));
+      return;
+    }
     const btn = e.target.closest?.("[data-act]");
     if (!btn || btn.disabled) return;
     const s = this._state;
@@ -341,23 +361,160 @@ export class EnergyOverviewCard extends HTMLElement {
   }
 }
 
-/** Placeholder until phase 4. */
+const expandIcon =
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+const collapseIcon =
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>';
+
+/**
+ * One row: SoC ring, name, status, PV / grid now and today's self-sufficiency. The button opens the main card
+ * as a dialog (`popup: true`, default) or expands it below the row (`popup: false`).
+ */
 export class EnergyOverviewMiniCard extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+    this._cache = new Cache();
+    this._expanded = false;
+  }
+
   setConfig(config) {
-    this._config = config;
+    if (!config || typeof config !== "object") throw new Error("Invalid configuration");
+    this._config = { ...DEFAULTS, popup: true, ...config };
+    this._cache.clear();
+    this._autarky = undefined;
+    if (this._inline) this._inline.setConfig(this._mainConfig());
+    if (this._hass) this._start();
   }
 
   set hass(hass) {
-    if (this.innerHTML) return;
-    this.innerHTML = `<ha-card style="padding:16px">${esc(translator(langOf(hass))("title"))}</ha-card>`;
+    const first = !this._hass;
+    this._hass = hass;
+    this._tz = tzOf(hass);
+    if (this._dialog?.isOpen) this._dialog.hass = hass;
+    if (this._inline) this._inline.hass = hass;
+    if (first) this._start();
+    else if (this._sig() !== this._lastSig) this._render();
+  }
+
+  connectedCallback() {
+    clearInterval(this._timer);
+    this._timer = setInterval(() => this._loadToday(), 5 * TICK);
+  }
+
+  disconnectedCallback() {
+    clearInterval(this._timer);
+    this._timer = null;
   }
 
   getCardSize() {
-    return 1;
+    return this._expanded ? 1 + 18 : 1;
   }
 
   getGridOptions() {
-    return { columns: 12, min_columns: 6, rows: 1 };
+    return { columns: 12, min_columns: 6, rows: "auto" };
+  }
+
+  _mainConfig() {
+    const { popup, ...rest } = this._config;
+    return { ...rest, type: "custom:energy-overview-card" };
+  }
+
+  async _start() {
+    if (!this._config || !this._hass) return;
+    this._render();
+    this._prefs = await fetchPrefs(this._hass, this._cache);
+    this._live = prefsLive(this._prefs);
+    this._render();
+    this._loadToday();
+  }
+
+  async _loadToday() {
+    if (!this._hass || !this._config) return;
+    const range = periodRange("day", new Date(), { tz: this._tz });
+    const energy = await fetchPeriodEnergy(this._hass, this._cache, this._config, this._prefs, range).catch(() => null);
+    const autarky = energy?.hasData ? energy.total.autarky : null;
+    if (autarky !== this._autarky) {
+      this._autarky = autarky;
+      this._render();
+    }
+  }
+
+  _sig() {
+    return liveKeys(this._config, this._live)
+      .map((id) => this._hass?.states?.[id]?.state)
+      .join("|");
+  }
+
+  _render() {
+    if (!this._config || !this._hass) return;
+    const lang = langOf(this._hass);
+    const t = translator(lang);
+    const live = readLive(this._hass, this._config, this._live);
+    const th = Number(this._config.threshold_w) || 0;
+    const status = Object.values(live).some((v) => v !== null) ? deriveStatus(live, th) : null;
+    const soc = Number.isFinite(live.soc) ? Math.max(0, Math.min(100, live.soc)) : null;
+    const C = 2 * Math.PI * 19;
+    const exporting = (live.grid_export || 0) > th && (live.grid_export || 0) >= (live.grid_import || 0);
+    const grid = exporting
+      ? `<span><b class="tx-exp">${esc(t("grid"))}</b> ↑ ${esc(fmtPower(live.grid_export, lang))}</span>`
+      : `<span><b class="tx-imp">${esc(t("grid"))}</b> ↓ ${esc(fmtPower(live.grid_import, lang))}</span>`;
+    const autarky = Number.isFinite(this._autarky)
+      ? `<span><b>${esc(t("mini_today"))}</b> ${esc(t("mini_autarky", { v: Math.round(this._autarky * 100) }))}</span>`
+      : "";
+    const inline = this._config.popup === false;
+    const btn = inline
+      ? `<button type="button" class="open" data-open aria-expanded="${this._expanded}" aria-label="${esc(t("open"))}">${this._expanded ? collapseIcon : expandIcon}</button>`
+      : `<button type="button" class="open" data-open aria-haspopup="dialog" aria-label="${esc(t("open"))}">${expandIcon}</button>`;
+    const row = `<ha-card class="mini">
+      <div class="socring">
+        <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
+          <circle cx="23" cy="23" r="19" fill="none" stroke="var(--eoc-line)" stroke-width="4"/>
+          ${soc ? `<circle cx="23" cy="23" r="19" fill="none" stroke="${socColor(soc)}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${((C * soc) / 100).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 23 23)"/>` : ""}
+        </svg>
+        <span>${soc === null ? "–" : `${Math.round(soc)}%`}</span>
+      </div>
+      <div class="body">
+        <div class="row1"><span class="name">${esc(this._config.name || t("title"))}</span>${statusPill({ status, t })}</div>
+        <div class="row2">
+          <span><b class="tx-pv">${esc(t("pv"))}</b> ${esc(fmtPower(live.solar, lang))}</span>
+          ${grid}
+          ${autarky}
+        </div>
+      </div>
+      ${btn}
+    </ha-card>`;
+    if (!this.shadowRoot.firstChild) {
+      this.shadowRoot.innerHTML = `<style>${STYLE}.wrap{display:flex;flex-direction:column;gap:8px}</style><div class="wrap"><div data-row></div><div data-inline></div></div>`;
+      this.shadowRoot.addEventListener("click", (e) => {
+        const open = e.target.closest?.("[data-open]");
+        if (open) this._open(open);
+      });
+    }
+    this.shadowRoot.querySelector("[data-row]").innerHTML = row;
+    this._lastSig = this._sig();
+  }
+
+  _open(opener) {
+    const t = translator(langOf(this._hass));
+    if (this._config.popup === false) {
+      this._expanded = !this._expanded;
+      const box = this.shadowRoot.querySelector("[data-inline]");
+      if (this._expanded) {
+        this._inline = document.createElement("energy-overview-card");
+        this._inline.setConfig(this._mainConfig());
+        this._inline.hass = this._hass;
+        box.append(this._inline);
+      } else {
+        box.replaceChildren();
+        this._inline = null;
+      }
+      this._render();
+      this.dispatchEvent(new Event("iron-resize", { bubbles: true, composed: true }));
+      return;
+    }
+    this._dialog = this._dialog || document.createElement("energy-overview-dialog");
+    this._dialog.open({ config: this._mainConfig(), hass: this._hass, opener, label: this._config.name || t("title") });
   }
 }
 

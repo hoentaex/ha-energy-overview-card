@@ -17,7 +17,6 @@
         background: #11111b;
       }
       body { margin: 0; font-family: Roboto, Inter, system-ui, sans-serif; }
-      ha-card { display: block; background: var(--ha-card-background); border-radius: 16px; border: 1px solid var(--divider-color); box-sizing: border-box; }
       .bar { padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 14px; background: #fff; border-bottom: 1px solid #ddd; }
       .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .col { padding: 20px; color: var(--primary-text-color); display: flex; flex-direction: column; gap: 16px; align-items: center; }
@@ -42,7 +41,18 @@
       <div class="col dark" id="dark"></div>
     </div>
     <script type="module">
-      import "../dist/ha-energy-overview-card.js";
+      // Stand-in for Home Assistant's ha-card: background, border and radius from the theme.
+      customElements.define(
+        "ha-card",
+        class extends HTMLElement {
+          constructor() {
+            super();
+            this.attachShadow({ mode: "open" }).innerHTML =
+              "<style>:host{display:block;box-sizing:border-box;background:var(--ha-card-background);border:1px solid var(--divider-color);border-radius:var(--ha-card-border-radius,16px)}</style><slot></slot>";
+          }
+        },
+      );
+      await import("../dist/ha-energy-overview-card.js");
       import { CONFIG, makeHass } from "./mock.js";
 
       const q = new URLSearchParams(location.search);

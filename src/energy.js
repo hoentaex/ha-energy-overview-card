@@ -177,12 +177,16 @@ export function readLive(hass, config, live = {}) {
   };
 }
 
-/** Status pill: grid_house | pv_charging | pv_house | battery_house | export. */
+/**
+ * Status pill: grid_house | pv_charging | pv_house | battery_house | export. The dominant source wins, so a
+ * battery covering 380 W with 30 W from the grid still reads "battery supplies home".
+ */
 export function deriveStatus(l, threshold = 10) {
   const on = (v) => Number.isFinite(v) && v > threshold;
-  if (on(l.solar) && on(l.battery_charge) && !on(l.grid_import)) return "pv_charging";
+  const w = (v) => (Number.isFinite(v) ? v : 0);
+  if (on(l.solar) && on(l.battery_charge) && w(l.solar) >= w(l.grid_import)) return "pv_charging";
   if (on(l.grid_export)) return "export";
-  if (on(l.battery_discharge) && !on(l.grid_import)) return "battery_house";
+  if (on(l.battery_discharge) && w(l.battery_discharge) >= w(l.grid_import)) return "battery_house";
   if (on(l.grid_import)) return "grid_house";
   if (on(l.solar)) return "pv_house";
   return "grid_house";

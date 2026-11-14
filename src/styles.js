@@ -45,6 +45,8 @@ button:focus-visible { outline: 2px solid var(--eoc-accent); outline-offset: 2px
 .pill { align-self: flex-start; flex: 0 0 auto; max-width: 62%; min-width: 0; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; background: color-mix(in srgb, var(--c) 18%, transparent); color: color-mix(in srgb, var(--c) 62%, var(--eoc-text)); }
 .pill::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
 
+.close { flex: none; width: 44px; height: 44px; margin: -8px -8px 0 -4px; align-self: flex-start; border: 0; border-radius: 12px; background: transparent; color: var(--eoc-sub); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
 /* live flow */
 .flow { padding: 10px 0 8px; gap: 0; }
 .flow-head { display: flex; align-items: center; justify-content: space-between; padding: 0 14px 4px; font-size: 13px; }

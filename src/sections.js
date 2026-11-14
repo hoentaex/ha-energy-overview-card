@@ -33,6 +33,7 @@ export function header(ctx) {
       ${config.subtitle ? `<div class="sub">${esc(config.subtitle)}</div>` : ""}
     </div>
     ${statusPill(ctx)}
+    ${config._dialog ? `<button type="button" class="close" data-close aria-label="${esc(t("close"))}">${chevron("M6 6l12 12M18 6L6 18")}</button>` : ""}
   </div>`;
 }
 

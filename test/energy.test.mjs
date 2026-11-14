@@ -161,5 +161,9 @@ test("status pill", () => {
   assert.equal(deriveStatus({ solar: 0, battery_discharge: 300, grid_import: 5 }), "battery_house");
   assert.equal(deriveStatus({ solar: 1500, grid_export: 600, battery_charge: 0 }), "export");
   assert.equal(deriveStatus({ grid_import: 400 }), "grid_house");
+  assert.equal(deriveStatus({ solar: 0, battery_discharge: 380, grid_import: 30 }), "battery_house");
+  assert.equal(deriveStatus({ solar: 0, battery_discharge: 100, grid_import: 300 }), "grid_house");
+  assert.equal(deriveStatus({ solar: 0, battery_charge: 400, grid_import: 580 }), "grid_house");
+  assert.equal(deriveStatus({ solar: 1050, battery_charge: 520, grid_export: 300 }), "pv_charging");
   assert.equal(deriveStatus({ solar: 8, grid_import: 8 }), "grid_house");
 });
