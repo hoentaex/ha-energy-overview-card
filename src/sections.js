@@ -4,6 +4,7 @@ import { renderFlow } from "./flow.js";
 import { periodLabel } from "./period.js";
 import { esc, fmtDay, fmtEnergy, fmtNum, fmtTime, fmtWeekday } from "./shared.js";
 import { nightBlocks } from "./sun.js";
+import { svgIcon } from "./icons.js";
 
 const STATUS_COLOR = {
   grid_house: "var(--eoc-imp)",
@@ -13,27 +14,25 @@ const STATUS_COLOR = {
   export: "var(--eoc-exp)",
 };
 
-const bolt =
-  '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>';
 const chevron = (d) =>
   `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
 
 export const statusPill = (ctx) =>
   ctx.status
-    ? `<div class="pill" style="--c:${STATUS_COLOR[ctx.status]}">${esc(ctx.t(`status_${ctx.status}`))}</div>`
+    ? `<span class="pill" style="--c:${STATUS_COLOR[ctx.status]}"><span class="dot"></span><span>${esc(ctx.t(`status_${ctx.status}`))}</span></span>`
     : "";
 
 export function header(ctx) {
   const { config, t } = ctx;
-  const logo = config.icon ? `<ha-icon icon="${esc(config.icon)}"></ha-icon>` : bolt;
+  const logo = config.icon ? `<ha-icon icon="${esc(config.icon)}"></ha-icon>` : svgIcon("flash");
   return `<div class="header">
-    <div class="logo">${logo}</div>
+    <div class="logo" style="--c:${STATUS_COLOR[ctx.status] || "var(--eoc-pv)"}">${logo}</div>
     <div class="titles">
       <div class="name">${esc(config.name || t("title"))}</div>
       ${config.subtitle ? `<div class="sub">${esc(config.subtitle)}</div>` : ""}
     </div>
     ${statusPill(ctx)}
-    ${config._dialog ? `<button type="button" class="close" data-close aria-label="${esc(t("close"))}">${chevron("M6 6l12 12M18 6L6 18")}</button>` : ""}
+    ${config._dialog ? `<button type="button" class="zoom" data-close aria-label="${esc(t("close"))}">${svgIcon("close")}</button>` : ""}
   </div>`;
 }
 
@@ -97,7 +96,7 @@ export function power(ctx) {
     )
     .join("");
   return `<div class="tile">
-    <div class="tile-head"><div class="tile-title">${esc(t("power_title"))}</div><div class="muted small">${esc(ctx.isCurrentPeriod ? t("today") : periodLabel(ctx.range, lang))} · kW</div></div>
+    <div class="tile-head"><div class="tile-title">${svgIcon("chart")}<span>${esc(t("power_title"))}</span></div><div class="muted small">${esc(ctx.isCurrentPeriod ? t("today") : periodLabel(ctx.range, lang))} · kW</div></div>
     <div class="readout three" aria-live="polite" data-pro>
       <div class="r-title">${esc(powerTitle(ctx, i))}</div><div class="r-line">${esc(l1)}</div><div class="r-line">${esc(l2)}</div>
     </div>
@@ -118,7 +117,7 @@ const legend = (segs, lang) =>
 
 export function balance(ctx) {
   const { t, lang, energy } = ctx;
-  const head = `<div class="tile-head"><div class="tile-title">${esc(t("balance"))}</div><div class="muted small">${esc(periodLabel(ctx.range, lang))}</div></div>`;
+  const head = `<div class="tile-head"><div class="tile-title">${svgIcon("pie")}<span>${esc(t("balance"))}</span></div><div class="muted small">${esc(periodLabel(ctx.range, lang))}</div></div>`;
   if (!energy) return `<div class="tile">${head}<div class="empty">${esc(t("loading"))}</div></div>`;
   if (!energy.hasData) return `<div class="tile">${head}<div class="empty">${esc(t("no_stats"))}</div></div>`;
   const s = energy.total;
@@ -228,7 +227,7 @@ export function history(ctx) {
         `<button type="button" data-act="mode" data-v="${m}" aria-pressed="${m === state.mode}">${esc(t(`mode_${m}`))}</button>`,
     )
     .join("");
-  const head = `<div class="tile-head" style="align-items:center"><div class="tile-title">${esc(title)}</div><div class="modes" role="group" aria-label="${esc(t("view"))}">${modes}</div></div>`;
+  const head = `<div class="tile-head" style="align-items:center"><div class="tile-title">${svgIcon("bars")}<span>${esc(title)}</span></div><div class="modes" role="group" aria-label="${esc(t("view"))}">${modes}</div></div>`;
   if (!ctx.energy) return `<div class="tile">${head}<div class="empty">${esc(t("loading"))}</div></div>`;
   if (!ctx.energy.hasData) return `<div class="tile">${head}<div class="empty">${esc(t("no_stats"))}</div></div>`;
   const units = ctx.units;

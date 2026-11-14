@@ -108,7 +108,7 @@ export function renderFlow(live, opts) {
   const fc = opts.forecastToday;
   return `
   <div class="tile flow">
-    <div class="flow-head"><span class="live">${esc(t("live"))}</span><span class="muted small">${esc(opts.time || "")}</span></div>
+    <div class="flow-head"><span class="tile-title live">${esc(t("live"))}</span><span class="muted small">${esc(opts.time || "")}</span></div>
     <div class="stage" role="img" aria-label="${esc(aria)}">
       <svg class="lines" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
         ${Object.values(PATHS)

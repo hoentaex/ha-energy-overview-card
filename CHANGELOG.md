@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 (2026-11-15)
+
+- Look aligned with the Proxmox and Tibber cards: round 40 px logo in the status colour with an MDI icon, status
+  as a chip, uppercase section titles with icons, panels on the theme's secondary background without a border,
+  round close button; mini card with a 56 px ring, the name kept whole and the status shortened instead
+
 ## 0.1.0 (2026-11-15)
 
 First release.

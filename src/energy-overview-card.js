@@ -21,6 +21,7 @@ import { deriveStatus, forecastEntries, prefsLive, readLive } from "./energy.js"
 import { canGoForward, isCurrent, periodRange, shiftAnchor } from "./period.js";
 import { socColor } from "./flow.js";
 import { detectConfig, EnergyOverviewCardEditor, EnergyOverviewMiniCardEditor } from "./editor.js";
+import { svgIcon } from "./icons.js";
 import "./popup.js";
 import { defaultSel, historyReadout, historyUnits, powerTitle, RENDERERS, statusPill } from "./sections.js";
 import { DEFAULTS, esc, fmtPower, HISTORY_MODES, langOf, SECTIONS, translator } from "./shared.js";
@@ -372,10 +373,8 @@ export class EnergyOverviewCard extends HTMLElement {
   }
 }
 
-const expandIcon =
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
-const collapseIcon =
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>';
+const expandIcon = svgIcon("expand");
+const collapseIcon = svgIcon("collapse");
 
 /**
  * One row: SoC ring, name, status, PV / grid now and today's self-sufficiency. The button opens the main card
@@ -483,8 +482,8 @@ export class EnergyOverviewMiniCard extends HTMLElement {
       : "";
     const inline = this._config.popup === false;
     const btn = inline
-      ? `<button type="button" class="open" data-open aria-expanded="${this._expanded}" aria-label="${esc(t("open"))}">${this._expanded ? collapseIcon : expandIcon}</button>`
-      : `<button type="button" class="open" data-open aria-haspopup="dialog" aria-label="${esc(t("open"))}">${expandIcon}</button>`;
+      ? `<button type="button" class="zoom" data-open aria-expanded="${this._expanded}" aria-label="${esc(t("open"))}">${this._expanded ? collapseIcon : expandIcon}</button>`
+      : `<button type="button" class="zoom" data-open aria-haspopup="dialog" aria-label="${esc(t("open"))}">${expandIcon}</button>`;
     const row = `<ha-card class="mini">
       <div class="socring">
         <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">

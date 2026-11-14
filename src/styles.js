@@ -15,7 +15,7 @@ export const STYLE = `
   --eoc-text: var(--primary-text-color, #212121);
   --eoc-sub: var(--secondary-text-color, #727272);
   --eoc-card: var(--ha-card-background, var(--card-background-color, #fff));
-  --eoc-tile: color-mix(in srgb, var(--eoc-text) 4%, var(--eoc-card));
+  --eoc-tile: var(--secondary-background-color, rgba(127, 127, 127, 0.08));
   --eoc-border: var(--divider-color, rgba(127, 127, 127, 0.25));
   --eoc-line: var(--divider-color, rgba(127, 127, 127, 0.25));
   --eoc-accent: var(--eoc-accent-color, var(--primary-color, #03a9f4));
@@ -24,9 +24,11 @@ export const STYLE = `
 ha-card { padding: 16px; display: flex; flex-direction: column; gap: 14px; color: var(--eoc-text); overflow: hidden; }
 button { font: inherit; color: inherit; }
 button:focus-visible { outline: 2px solid var(--eoc-accent); outline-offset: 2px; }
-.tile { border-radius: 14px; background: var(--eoc-tile); border: 1px solid var(--eoc-border); padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tile { border-radius: 12px; background: var(--eoc-tile); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .tile-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.tile-title { font-size: 14px; font-weight: 500; }
+.tile-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: var(--eoc-sub); }
+.icon { width: 18px; height: 18px; fill: currentColor; flex: none; }
+.tile-title .icon { width: 16px; height: 16px; }
 .muted { color: var(--eoc-sub); }
 .small { font-size: 12px; }
 .empty { font-size: 12.5px; color: var(--eoc-sub); }
@@ -38,19 +40,23 @@ button:focus-visible { outline: 2px solid var(--eoc-accent); outline-offset: 2px
 
 /* header */
 .header { display: flex; align-items: center; gap: 12px; }
-.logo { width: 42px; height: 42px; border-radius: 12px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--eoc-accent-soft); color: var(--eoc-accent); --mdc-icon-size: 22px; }
+.logo { width: 40px; height: 40px; border-radius: 50%; flex: none; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); --mdc-icon-size: 22px; }
+.logo .icon { width: 22px; height: 22px; }
 .titles { flex: 1 1 0; min-width: 72px; }
-.name { font-size: 17px; font-weight: 500; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sub { font-size: 12.5px; line-height: 17px; color: var(--eoc-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pill { align-self: flex-start; flex: 0 0 auto; max-width: 62%; min-width: 0; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; white-space: nowrap; background: color-mix(in srgb, var(--c) 18%, transparent); color: color-mix(in srgb, var(--c) 62%, var(--eoc-text)); }
-.pill::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+.name { font-size: 16px; font-weight: 500; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub { font-size: 12px; color: var(--eoc-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill { align-self: flex-start; margin-top: 1px; flex: 0 1 auto; min-width: 0; max-width: 62%; overflow: hidden; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; white-space: nowrap; background: color-mix(in srgb, var(--c) 15%, transparent); color: color-mix(in srgb, var(--c) 62%, var(--eoc-text)); }
+.pill > span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c); flex: none; display: inline-block; }
 
-.close { flex: none; width: 44px; height: 44px; margin: -8px -8px 0 -4px; align-self: flex-start; border: 0; border-radius: 12px; background: transparent; color: var(--eoc-sub); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.zoom { flex: none; cursor: pointer; width: 40px; height: 40px; margin: -4px -8px -4px 0; padding: 0; border: 0; border-radius: 50%; background: transparent; display: grid; place-items: center; color: var(--eoc-sub); }
+.zoom .icon { width: 20px; height: 20px; }
+.zoom:hover { background: color-mix(in srgb, var(--eoc-sub) 16%, transparent); color: var(--eoc-text); }
 
 /* live flow */
 .flow { padding: 10px 0 8px; gap: 0; }
 .flow-head { display: flex; align-items: center; justify-content: space-between; padding: 0 14px 4px; font-size: 13px; }
-.flow-head .live { font-weight: 500; color: var(--eoc-sub); display: flex; align-items: center; gap: 6px; }
+.flow-head .live { gap: 6px; }
 .flow-head .live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--eoc-bat); }
 .stage { position: relative; width: 100%; max-width: 388px; height: 324px; margin: 0 auto; }
 .stage svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
@@ -70,7 +76,7 @@ button:focus-visible { outline: 2px solid var(--eoc-accent); outline-offset: 2px
 
 /* period switcher */
 .period { display: flex; flex-direction: column; gap: 6px; }
-.seg { display: flex; padding: 3px; border-radius: 12px; background: var(--eoc-tile); border: 1px solid var(--eoc-border); }
+.seg { display: flex; padding: 3px; border-radius: 12px; background: var(--eoc-tile); }
 .seg button { flex: 1 1 0; min-width: 0; height: 38px; border: 0; border-radius: 9px; background: transparent; font-weight: 500; font-size: 13px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--eoc-accent); color: var(--text-primary-color, var(--eoc-card)); }
 .nav { display: flex; align-items: center; gap: 4px; }
@@ -142,7 +148,7 @@ button:focus-visible { outline: 2px solid var(--eoc-accent); outline-offset: 2px
 
 /* footer */
 .foot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.foot .tile { padding: 10px; gap: 2px; border-radius: 12px; }
+.foot .tile { padding: 10px 12px; gap: 2px; }
 .foot .k { font-size: 11.5px; color: var(--eoc-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .foot .v { font-size: 15px; font-weight: 700; white-space: nowrap; }
 .foot .v span { font-size: 11.5px; font-weight: 400; color: var(--eoc-sub); }
@@ -152,15 +158,17 @@ button:focus-visible { outline: 2px solid var(--eoc-accent); outline-offset: 2px
 .fc b { flex: none; color: var(--eoc-text); font-weight: 500; }
 
 /* mini card */
-.mini { padding: 12px 12px 12px 14px; flex-direction: row; align-items: center; gap: 12px; }
-.mini .socring { position: relative; width: 46px; height: 46px; flex: none; }
-.mini .socring span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11.5px; font-weight: 700; }
+.mini { padding: 12px 12px 12px 16px; flex-direction: row; align-items: center; gap: 14px; }
+.mini .socring { position: relative; width: 56px; height: 56px; flex: none; }
+.mini .socring svg { width: 56px; height: 56px; }
+.mini .socring span { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; }
 .mini .body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .mini .row1 { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.mini .row1 .name { font-size: 14.5px; }
-.mini .pill { align-self: center; padding: 3px 8px; font-size: 11px; }
-.mini .pill::before { display: none; }
-.mini .row2 { display: flex; gap: 10px; font-size: 12px; color: var(--eoc-sub); white-space: nowrap; overflow: hidden; }
-.mini .row2 b { font-weight: 700; }
-.mini .open { width: 44px; height: 44px; flex: none; border: 0; border-radius: 12px; background: var(--eoc-accent-soft); color: var(--eoc-accent); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.mini .row1 .name { flex: none; max-width: 65%; }
+.mini .row1 .pill { max-width: none; flex: 0 1 auto; }
+.mini .pill { align-self: center; margin-top: 0; }
+.mini .row2 { display: flex; gap: 10px; font-size: 13px; color: var(--eoc-sub); white-space: nowrap; overflow: hidden; }
+.mini .row2 b { font-weight: 500; }
+.mini .zoom { width: 44px; height: 44px; margin: 0; border-radius: 12px; background: var(--eoc-tile); }
+.mini .zoom[aria-expanded="true"] .icon { transform: none; }
 `;
