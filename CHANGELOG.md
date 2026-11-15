@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2026-11-15)
 
 - **Flow styles** (`flow_style`), the ellipse stays the default:
   - `house`: a 3D house on a weather sky. All lines run through the meter box, horizontal and vertical with round
