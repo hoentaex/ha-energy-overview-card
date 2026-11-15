@@ -172,4 +172,50 @@ button:focus-visible { outline: 2px solid var(--eoc-accent); outline-offset: 2px
 .mini .row2 b { font-weight: 500; }
 .mini .zoom { width: 44px; height: 44px; margin: 0; border-radius: 12px; background: var(--eoc-tile); }
 .mini .zoom[aria-expanded="true"] .icon { transform: none; }
+/* flow styles: house scene, energy bands, ring (flow_style) */
+.flow.skyed { position: relative; overflow: hidden; color: #fff; --eoc-text: #fff; --eoc-sub: rgba(255, 255, 255, 0.82); --eoc-line: rgba(255, 255, 255, 0.28); }
+.flow.skyed > :not(.sky) { position: relative; z-index: 1; }
+.flow.skyed .flow-head { text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35); }
+.sky { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: #6f8fb8; }
+.sky-img { position: absolute; inset: 0; background-size: cover; background-position: center bottom; }
+.sky-fx { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sky-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, transparent 26%); }
+.fs-house { padding-bottom: 0; }
+.scene { position: relative; aspect-ratio: 3 / 2; margin-top: -4px; }
+.scene img, .scene svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.h-track { fill: none; stroke: rgba(255, 255, 255, 0.3); stroke-width: 4; stroke-linecap: round; }
+.h-glow { fill: none; stroke: currentColor; stroke-opacity: 0.45; stroke-linecap: round; }
+.h-line { fill: none; stroke: currentColor; stroke-linecap: round; }
+.h-arrow { fill: none; stroke: currentColor; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.h-comet { fill: none; stroke: #fff; stroke-opacity: 0.9; stroke-linecap: round; stroke-dasharray: 70 930; animation: eoc-comet var(--dur, 2s) linear infinite; }
+@keyframes eoc-comet { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+.h-bat.pulse { animation: eoc-pulse 1.6s ease-in-out infinite; }
+@keyframes eoc-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.h-chip { position: absolute; display: flex; align-items: center; gap: 6px; padding: 4px 9px 4px 7px; border-radius: 10px; transform: translate(-50%, -50%); background: rgba(14, 20, 34, 0.5); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: #fff; white-space: nowrap; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18); }
+.h-chip.r { transform: translate(-100%, -50%); }
+.h-chip i { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--c); box-shadow: 0 0 8px var(--c); }
+.h-chip small { display: block; font-size: 10.5px; line-height: 1.2; opacity: 0.85; }
+.h-chip b { display: block; font-size: 13.5px; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.bands { position: relative; aspect-ratio: 380 / 230; margin: 4px 0 6px; }
+.bands svg, .ringstage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.band { opacity: 0.42; }
+.nlab { position: absolute; transform: translateY(-50%); display: flex; flex-direction: column; gap: 1px; line-height: 1.2; }
+.nlab.l { text-align: right; align-items: flex-end; }
+.nlab small, .sat small, .ring-center small { font-size: 11px; color: var(--eoc-sub); }
+.nlab b, .sat b { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nhead { position: absolute; top: 0; transform: translateX(-50%); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--eoc-sub); }
+.fs-idle { position: absolute; inset: 0; display: grid; place-items: center; color: var(--eoc-sub); font-size: 13px; }
+.ringstage { position: relative; aspect-ratio: 380 / 250; margin: 4px 0 2px; }
+.sat { position: absolute; transform: translate(-50%, -20px); display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; line-height: 1.2; }
+.sat .logo { margin-bottom: 4px; }
+.ring-center { position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; line-height: 1.3; text-align: center; }
+.ring-center .up { text-transform: uppercase; letter-spacing: 0.08em; }
+.ring-center b { font-size: 24px; font-weight: 700; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.ring-foot { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 12px 4px; }
+.ring-foot .tile { padding: 8px 10px; gap: 2px; background: var(--eoc-card); }
+.flow.skyed .ring-foot .tile { background: rgba(14, 20, 34, 0.4); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.ring-foot .k { font-size: 11px; color: var(--eoc-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ring-foot .v { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.flow.skyed .logo { background: color-mix(in srgb, var(--c) 24%, rgba(14, 20, 34, 0.55)); color: color-mix(in srgb, var(--c) 78%, #fff); }
+@media (prefers-reduced-motion: reduce) { .h-comet, .h-bat.pulse { animation: none; } .h-comet { display: none; } }
 `;

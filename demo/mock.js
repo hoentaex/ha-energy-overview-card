@@ -45,6 +45,7 @@ export const CONFIG = {
   consumption_stat: "sensor.stromverbrauch_gesamt_real_daily",
   battery_grid_charge_stat: "sensor.akkuladung_von_netz_energy_daily",
   forecast_today_entity: "sensor.energy_production_today",
+  weather_entity: "weather.home",
 };
 
 // ---------- simulation ----------
@@ -209,7 +210,15 @@ export const SCENARIOS = {
   gridcharge: { pv: 0, load: 180, imp: 580, exp: 0, ch: 0, gc: 400, dis: 0, soc: 22 },
 };
 
-export function makeHass({ lang = "de", scenario = "sim", minimal = false } = {}) {
+/** Sun elevation (°) and weather per scenario, for the sky of the house scene. */
+const SKY = {
+  night: [-25, "clear-night"],
+  noon: [32, "sunny"],
+  evening: [3, "sunny"],
+  gridcharge: [12, "rainy"],
+};
+
+export function makeHass({ lang = "de", scenario = "sim", minimal = false, weather = "" } = {}) {
   const { rows } = simulate();
   const r = SCENARIOS[scenario] || rows.at(-1);
   const states = {};
@@ -217,10 +226,13 @@ export function makeHass({ lang = "de", scenario = "sim", minimal = false } = {}
   const fc = Object.values(forecast().demo_forecast.wh_hours).reduce((a, b) => a + b, 0) / 1000;
   states["sensor.energy_production_today"] = st(fc.toFixed(3), "kWh");
   const sun = sunOf(Date.now());
+  const now = Date.now();
+  const [elevation, cond] = SKY[scenario] || [sun.rise <= now && now < sun.set ? 25 : -20, "partlycloudy"];
   states["sun.sun"] = {
-    state: "above_horizon",
-    attributes: { next_rising: sun.rise?.toISOString(), next_setting: sun.set?.toISOString() },
+    state: elevation > 0 ? "above_horizon" : "below_horizon",
+    attributes: { next_rising: sun.rise?.toISOString(), next_setting: sun.set?.toISOString(), elevation },
   };
+  states["weather.home"] = { state: weather || cond, attributes: { friendly_name: "Home" } };
   const handlers = {
     "energy/get_prefs": PREFS,
     "recorder/statistics_during_period": statistics,

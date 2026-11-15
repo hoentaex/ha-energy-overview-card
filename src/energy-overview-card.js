@@ -22,6 +22,8 @@ import { canGoForward, isCurrent, periodRange, shiftAnchor } from "./period.js";
 import { socColor } from "./flow.js";
 import { detectConfig, EnergyOverviewCardEditor, EnergyOverviewMiniCardEditor } from "./editor.js";
 import { svgIcon } from "./icons.js";
+import "./assets.js";
+import { animateSky } from "./flowstyles.js";
 import "./popup.js";
 import { defaultSel, historyReadout, historyUnits, powerTitle, RENDERERS, statusPill } from "./sections.js";
 import { DEFAULTS, esc, fmtPower, HISTORY_MODES, langOf, SECTIONS, translator } from "./shared.js";
@@ -227,6 +229,7 @@ export class EnergyOverviewCard extends HTMLElement {
     if (focus) this.shadowRoot.querySelector(focus)?.focus();
     this._liveSig = this._liveSignature();
     this._bind();
+    animateSky(this.shadowRoot);
   }
 
   /** Selector of the focused control, so keyboard focus survives a re-render. */
@@ -241,7 +244,9 @@ export class EnergyOverviewCard extends HTMLElement {
 
   _liveSignature() {
     const ids = liveKeys(this._config, this._live);
-    return ids.map((id) => this._hass?.states?.[id]?.state).join("|") + (this._hass?.states?.["sun.sun"]?.state || "");
+    const sun = this._hass?.states?.["sun.sun"];
+    const weather = this._config.weather_entity ? this._hass?.states?.[this._config.weather_entity]?.state : "";
+    return `${ids.map((id) => this._hass?.states?.[id]?.state).join("|")}${sun?.state || ""}${Math.round(Number(sun?.attributes?.elevation) || 0)}${weather || ""}`;
   }
 
   _maybeRenderLive() {
@@ -256,8 +261,16 @@ export class EnergyOverviewCard extends HTMLElement {
     const focus = this._focusKey();
     for (const s of ["header", "flow"]) {
       const el = this.shadowRoot.querySelector(`[data-sec="${s}"]`);
-      if (el) el.innerHTML = RENDERERS[s](ctx);
+      if (!el) continue;
+      // Sky and house image stay in place while their key is unchanged (no flicker, rain keeps falling).
+      const kept = new Map([...el.querySelectorAll("[data-keep]")].map((n) => [n.dataset.keep, n]));
+      el.innerHTML = RENDERERS[s](ctx);
+      for (const n of el.querySelectorAll("[data-keep]")) {
+        const old = kept.get(n.dataset.keep);
+        if (old) n.replaceWith(old);
+      }
     }
+    animateSky(this.shadowRoot);
     if (focus === "[data-close]") this.shadowRoot.querySelector(focus)?.focus();
     this._liveSig = this._liveSignature();
   }

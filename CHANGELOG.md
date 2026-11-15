@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.0 (unreleased)
+
+- **Flow styles** (`flow_style`), the ellipse stays the default:
+  - `house`: a 3D house on a weather sky. All lines run through the meter box, horizontal and vertical with round
+    corners, glowing in the colour of their flow with a moving light pulse and arrows in the flow direction; the line
+    into the home takes the colour of the source that feeds it most. The battery symbol pulses blue while charging and
+    green while discharging, its bars show the state of charge. From dusk the house has lit windows
+  - `sankey`: energy bands from the sources (solar, battery, grid) to the consumers (home, battery, export), the band
+    width by power
+  - `ring`: home consumption as a ring split by source, the state of charge inside, the share of own energy and the
+    split as tiles
+- **Weather sky** for the house scene and, with `flow_background: weather`, for bands and ring: clear, cloudy, rain,
+  snow and fog by day and by night plus two sunsets, picked from `weather_entity` and the sun's elevation (`sun.sun`);
+  light rain, snow and twinkling stars, still with reduced motion. Sky and house stay in place across live updates
+- Visual editor: flow style, background and weather entity; new cards pick up a weather entity
+- Images (house render and skies from the Solarhaus image package, two sunsets generated to match) are embedded in the
+  JS file, which grows to about 520 KB
+- Demo: flow style, weather and sky switches; screenshots of the flow styles
+
 ## 0.1.2 (2026-11-15)
 
 - Grid charging the battery is drawn in blue (flow, battery history, legend) with its own variable

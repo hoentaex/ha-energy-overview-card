@@ -14,6 +14,7 @@ await build({
   outfile,
   define: { __VERSION__: JSON.stringify(pkg.version) },
   legalComments: "inline",
+  loader: { ".webp": "dataurl" },
   logLevel: "warning",
 });
 const size = readFileSync(outfile).length;

@@ -34,7 +34,7 @@ Aufbau und Look orientieren sich an den Karten von [juju35](https://github.com/j
 
 - **Live:** Energiefluss zwischen Solar, Netz, Haus und Akku (aktive Flüsse animiert, Tempo nach Leistung),
   Ladestand mit kWh, Status-Pill („Netz versorgt Haus“, „PV-Überschuss · Akku lädt“, „PV deckt Haus“,
-  „Akku versorgt Haus“, „Einspeisung“).
+  „Akku versorgt Haus“, „Einspeisung“). Vier Darstellungen zur Wahl, siehe [Energiefluss-Darstellungen](#energiefluss-darstellungen).
 - **Zeitraum Tag / Woche / Monat** (unbegrenzt zurückblättern): Bilanz mit Verbrauch (aus Solar / Akku / Netz) und
   Erzeugung (ins Haus / in den Akku / Einspeisung), Autarkie, Eigenverbrauch, CO₂ gespart.
 - **Leistungsdiagramm** des Tages (Netzbezug, Einspeisung, PV, Verbrauch, Akku-Ladestand) mit Fadenkreuz.
@@ -165,6 +165,9 @@ die addiert wird:
 | `history_view` | Verlauf beim Öffnen: `consumption`, `solar`, `battery` | `consumption` |
 | `week_mode` | `calendar` (Mo–So) oder `rolling` (letzte 7 Tage) | `calendar` |
 | `power_resolution` | Raster des Leistungsdiagramms in Minuten: `5` oder `15` | `15` |
+| `flow_style` | Live-Fluss: `ellipse`, `house` (Haus-Szene), `sankey` (Energiebänder), `ring` (Haus-Ring) | `ellipse` |
+| `flow_background` | Hintergrund von Bändern und Ring: `none` oder `weather` (Wetterhimmel) | `none` |
+| `weather_entity` | `weather.*`-Entity für den Himmel | – (klarer Himmel) |
 | `threshold_w` | ab wie viel Watt ein Fluss als aktiv gilt (Linien, Status) | `10` |
 | `co2_factor` | kg CO₂ je kWh | `0.4` |
 | `animations` | Flussanimation (respektiert `prefers-reduced-motion`) | `true` |
@@ -176,6 +179,36 @@ die addiert wird:
 `--eoc-battery-color` (#5fd08a), `--eoc-import-color` (#ff9a5c), `--eoc-export-color` (#5aa9ff), `--eoc-grid-charge-color` (#5aa9ff, Netz lädt Akku),
 `--eoc-house-color` (#cba6f7), `--eoc-forecast-color` (#94e2d5), `--eoc-night-color` (rgba(180,190,254,.11)),
 `--eoc-night-icon-color` (#b4befe), `--eoc-accent-color` (Standard: `--primary-color`). Alles andere kommt aus dem Theme.
+
+### Energiefluss-Darstellungen
+
+`flow_style` wählt, wie der Live-Fluss aussieht. Die Ellipse bleibt der Standard.
+
+| `house` – Haus-Szene | `sankey` – Energiebänder | `ring` – Haus-Ring |
+|---|---|---|
+| <img src="screenshots/flow-house-noon-light.png" alt="Haus-Szene mittags" width="260"> | <img src="screenshots/flow-sankey-light.png" alt="Energiebänder" width="260"> | <img src="screenshots/flow-ring-dark.png" alt="Haus-Ring" width="260"> |
+| <img src="screenshots/flow-house-rain-dark.png" alt="Haus-Szene bei Regen, Netz lädt Akku" width="260"> | | <img src="screenshots/flow-ring-sky-light.png" alt="Haus-Ring auf dem Wetterhimmel" width="260"> |
+| <img src="screenshots/flow-house-night-dark.png" alt="Haus-Szene nachts" width="260"> | | |
+
+- **`ellipse`** (Standard): vier Knoten auf einer Ellipse, aktive Flüsse animiert.
+- **`house`**: 3D-Haus auf einem Wetterhimmel. Alle Leitungen laufen über den Zählerkasten, waagerecht und senkrecht
+  mit runden Ecken; aktive Leitungen leuchten in der Farbe ihres Flusses, mit Lichtimpuls und Pfeilen in Flussrichtung.
+  Die Leitung ins Haus nimmt die Farbe der Quelle an, die das Haus gerade am meisten versorgt. Das Batteriesymbol am
+  Akku pulsiert blau beim Laden und grün beim Entladen, die Balken zeigen den Ladestand. Ab der Dämmerung erscheint
+  das Haus mit beleuchteten Fenstern.
+- **`sankey`**: links woher (Solar, Akku, Netz), rechts wohin (Haus, Akku laden, Einspeisung); die Bandbreite
+  entspricht der Leistung, beide Seiten sind gleich hoch.
+- **`ring`**: großer Ring mit dem Hausverbrauch, Segmente nach Quelle (Solar, Akku, Netz), innen der Ladestand, dazu
+  der Anteil eigener Energie und die Aufteilung als Kacheln.
+
+**Wetterhimmel:** Die Haus-Szene steht immer auf einem Himmel; Bänder und Ring mit `flow_background: weather`.
+Der Himmel folgt `weather_entity` (klar, bewölkt, Regen, Schnee, Nebel) und dem Sonnenstand aus `sun.sun`:
+Tag, Sonnenuntergang (−4° bis 8°) und Nacht. Regen und Schnee fallen leicht animiert, nachts funkeln Sterne
+(bei „Bewegung reduzieren“ steht alles still). Ohne `weather_entity` ist der Himmel klar.
+
+> [!NOTE]
+> Haus- und Himmelsbilder sind in die JS-Datei eingebettet (der Marketplace installiert nur diese eine Datei).
+> Die Karte ist dadurch rund 500 KB groß.
 
 ### Verlauf
 
@@ -208,7 +241,7 @@ name: Energie
 Beide Karten lassen sich komplett im visuellen Editor einrichten: Entity-Auswahl für die Live-Werte, Statistik-Auswahl
 für die Zeiträume (leer = aus dem Energie-Dashboard), Abschnitte, Darstellung und ein Bereich **Erweitert**.
 Optionen mit Standardwert landen nicht im YAML. Eine neue Karte übernimmt die Leistungssensoren aus dem
-Energie-Dashboard und sucht selbst einen Ladestand-Sensor und die Tagesprognose.
+Energie-Dashboard und sucht selbst einen Ladestand-Sensor, die Tagesprognose und eine Wetter-Entity.
 
 ---
 
@@ -227,6 +260,14 @@ A Lovelace card for a **PV system with a home battery**: live energy flow, balan
 export), self-sufficiency, self-consumption and CO₂ saved; the day's power chart with a crosshair; and a history of
 consumption (with night blocks), solar (with today's forecast) and battery (charge up, discharge down, state-of-charge
 line). **Not included:** control logic, costs and tariffs.
+
+**Flow styles:** `flow_style` picks the live flow: `ellipse` (default), `house` (a 3D house on a weather sky; all lines
+run through the meter box, horizontal and vertical with round corners, glowing in the colour of their flow with arrows;
+the battery symbol pulses blue while charging and green while discharging; lit windows from dusk), `sankey` (energy
+bands from the sources to the consumers) or `ring` (home consumption by source with the state of charge inside).
+The house scene always stands on the sky; bands and ring take it with `flow_background: weather`. The sky follows
+`weather_entity` (clear, cloudy, rain, snow, fog) and the sun's elevation from `sun.sun` (day, sunset, night), with
+light rain, snow and twinkling stars. The images are embedded in the JS file, which makes it about 500 KB.
 
 **Home consumption:** only set `house_power_entity` / `consumption_stat` when the sensor measures the home alone.
 Sensors built as grid import + PV often count battery charging from the grid as home consumption; then the flow does
@@ -257,7 +298,7 @@ type: custom:energy-overview-card
 grid, today's self-sufficiency); its button opens the main card as a dialog (`popup: false` expands it below instead).
 
 **Visual editor:** both cards can be set up entirely in the UI editor; new cards take the power sensors from the
-Energy dashboard and find a state-of-charge sensor and today's forecast by themselves.
+Energy dashboard and find a state-of-charge sensor, today's forecast and a weather entity by themselves.
 
 ## Development
 

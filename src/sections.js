@@ -1,6 +1,7 @@
 // Section renderers of the main card. Each takes the render context built by the card and returns HTML.
 import { POWER_SERIES, powerReadout, renderHistory, renderPowerChart, ring } from "./charts.js";
 import { renderFlow } from "./flow.js";
+import { skyState, STYLE_RENDERERS } from "./flowstyles.js";
 import { periodLabel } from "./period.js";
 import { esc, fmtDay, fmtEnergy, fmtNum, fmtTime, fmtWeekday } from "./shared.js";
 import { nightBlocks } from "./sun.js";
@@ -37,16 +38,21 @@ export function header(ctx) {
 }
 
 export function flow(ctx) {
-  const { now, lang, tz } = ctx;
-  return renderFlow(ctx.live, {
+  const { now, lang, tz, config } = ctx;
+  const opts = {
     t: ctx.t,
     lang,
-    threshold: Number(ctx.config.threshold_w) || 0,
-    animations: ctx.config.animations !== false,
-    byPower: ctx.config.animate_by_power !== false,
+    threshold: Number(config.threshold_w) || 0,
+    animations: config.animations !== false,
+    byPower: config.animate_by_power !== false,
     time: `${fmtWeekday(now, lang, tz)} ${fmtTime(now, lang, tz)}`,
     forecastToday: ctx.forecastToday,
-  });
+  };
+  const style = STYLE_RENDERERS[config.flow_style];
+  if (!style) return renderFlow(ctx.live, opts);
+  // The house scene always stands on the weather sky; bands and ring only with flow_background: weather.
+  if (config.flow_style === "house" || config.flow_background === "weather") opts.sky = skyState(ctx.hass, config);
+  return style(ctx.live, opts);
 }
 
 export function period(ctx) {

@@ -1,5 +1,5 @@
 // Renders the demo page with the simulated hass at a fixed time (14 Nov 2026, 13:20 Berlin) and saves the
-// README screenshots: the whole card per period (light / dark) and the history tile in every view.
+// README screenshots: the whole card per period (light / dark), the history tile in every view and the flow styles.
 // Usage: npm run screenshots
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
@@ -21,7 +21,9 @@ const open = async (theme, query = "") => {
     timezoneId: "Europe/Berlin",
   });
   await page.clock.setFixedTime(TIME);
-  await page.goto(`http://127.0.0.1:${port}/demo/?lang=de&scenario=sim${query}`);
+  await page.goto(
+    `http://127.0.0.1:${port}/demo/?lang=de${query.includes("scenario=") ? "" : "&scenario=sim"}${query}`,
+  );
   await page.locator(`#${theme}`).evaluate((el) => {
     el.style.padding = "16px";
     el.style.width = "452px";
@@ -66,6 +68,25 @@ try {
     await dialog.screenshot({ path: shot(`popup-${theme}`) });
     console.log(`saved screenshots/popup-${theme}.png`);
     await page.close();
+  }
+  // Flow styles (flow_style): the live tile only, one scenario each.
+  const FLOWS = [
+    ["house-noon", "&style=house&scenario=noon"],
+    ["house-rain", "&style=house&scenario=gridcharge"],
+    ["house-night", "&style=house&scenario=night"],
+    ["sankey", "&style=sankey&scenario=noon"],
+    ["ring", "&style=ring&scenario=evening"],
+    ["ring-sky", "&style=ring&scenario=evening&sky=1"],
+  ];
+  for (const theme of ["light", "dark"]) {
+    for (const [name, query] of FLOWS) {
+      const { page, card } = await open(theme, query);
+      const tile = card.locator('[data-sec="flow"] > .tile');
+      await page.waitForTimeout(500);
+      await tile.screenshot({ path: shot(`flow-${name}-${theme}`) });
+      console.log(`saved screenshots/flow-${name}-${theme}.png`);
+      await page.close();
+    }
   }
 } finally {
   await browser.close();

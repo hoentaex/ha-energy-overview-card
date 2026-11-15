@@ -1,5 +1,6 @@
 // Visual editor (ha-form) for both cards, and the config of new cards (getStubConfig) from the Energy dashboard.
 import { prefsLive } from "./energy.js";
+import { FLOW_STYLES } from "./flowstyles.js";
 import { DEFAULTS, HISTORY_MODES, langOf, SECTIONS } from "./shared.js";
 
 const LABELS = {
@@ -37,6 +38,16 @@ const LABELS = {
     animations: "Animationen",
     animate_by_power: "Tempo nach Leistung",
     popup: "Hauptkarte als Popup (sonst aufklappen)",
+    flow_style: "Darstellung des Energieflusses",
+    flow_background: "Hintergrund (Bänder und Ring)",
+    weather_entity: "Wetter (für den Himmel)",
+    fs_ellipse: "Ellipse",
+    fs_house: "Haus-Szene",
+    fs_sankey: "Energiebänder",
+    fs_ring: "Haus-Ring",
+    bg_none: "Kartenhintergrund",
+    bg_weather: "Wetterhimmel",
+    h_weather: "Die Haus-Szene zeigt immer den Himmel; ohne Wetter klar, Tag und Nacht nach sun.sun",
     language: "Sprache",
     lang_auto: "Automatisch",
     threshold_w: "Schwellwert für aktive Flüsse",
@@ -92,6 +103,16 @@ const LABELS = {
     animations: "Animations",
     animate_by_power: "Speed by power",
     popup: "Main card as a popup (else expand)",
+    flow_style: "Energy flow style",
+    flow_background: "Background (bands and ring)",
+    weather_entity: "Weather (for the sky)",
+    fs_ellipse: "Ellipse",
+    fs_house: "House scene",
+    fs_sankey: "Energy bands",
+    fs_ring: "Home ring",
+    bg_none: "Card background",
+    bg_weather: "Weather sky",
+    h_weather: "The house scene always shows the sky; without weather a clear one, day and night from sun.sun",
     language: "Language",
     lang_auto: "Automatic",
     threshold_w: "Threshold for active flows",
@@ -190,6 +211,21 @@ export const editorSchema = (lang, { mini = false } = {}) => {
       flatten: true,
       schema: [
         {
+          type: "grid",
+          name: "",
+          schema: [
+            select(
+              "flow_style",
+              FLOW_STYLES.map((v) => ({ value: v, label: L[`fs_${v}`] })),
+            ),
+            select("flow_background", [
+              { value: "none", label: L.bg_none },
+              { value: "weather", label: L.bg_weather },
+            ]),
+          ],
+        },
+        ent("weather_entity", ["weather"]),
+        {
           name: "sections",
           selector: {
             select: {
@@ -258,6 +294,7 @@ export const helperFor = (lang, name) => {
   const L = LABELS[lang] || LABELS.en;
   if (STATS.includes(name)) return L.h_stat;
   if (LIVE_FROM_PREFS.includes(name)) return L.h_live;
+  if (name === "weather_entity") return L.h_weather;
   return undefined;
 };
 
@@ -389,5 +426,7 @@ export function detectConfig(hass, prefs) {
     ids.find((id) => id.startsWith("sensor.") && /energy_production_today$/.test(id));
   if (fc && (prefs?.energy_sources || []).some((s) => s.config_entry_solar_forecast?.length))
     config.forecast_today_entity = fc;
+  const weather = ids.find((id) => id.startsWith("weather."));
+  if (weather) config.weather_entity = weather;
   return config;
 }
