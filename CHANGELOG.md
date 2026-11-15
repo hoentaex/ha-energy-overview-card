@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 (2026-11-15)
+
+- **Balance card** `custom:energy-overview-balance-card`: today's home consumption as a ring split by grid, battery
+  and solar, grid on the left, own energy on the right, each with the power right now. A light runs along the wire
+  while power flows (towards the ring, away from it in blue while exporting), the ring sweeps in once and the house
+  icon breathes; values change in place without restarting the animation. Click or Enter opens the main card
+- House scene: the active lines shine more, like neon tubes – a wider and stronger glow, a thicker coloured line with
+  a bright core, a longer light pulse with its own halo and arrows with a bright edge
+
 ## 0.2.1 (2026-11-15)
 
 - Ring: the icons of solar, battery and grid sit in the middle of their circles again (the rule for the ring graphic

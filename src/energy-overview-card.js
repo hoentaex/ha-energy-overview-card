@@ -7,6 +7,7 @@
  *
  * Layout and look follow the cards of juju35 (https://github.com/juju35). MIT licence.
  */
+import { BALANCE_STYLE, patchBalance, renderBalance } from "./balancecard.js";
 import { powerReadout } from "./charts.js";
 import {
   Cache,
@@ -20,7 +21,12 @@ import {
 import { deriveStatus, forecastEntries, prefsLive, readLive } from "./energy.js";
 import { canGoForward, isCurrent, periodRange, shiftAnchor } from "./period.js";
 import { socColor } from "./flow.js";
-import { detectConfig, EnergyOverviewCardEditor, EnergyOverviewMiniCardEditor } from "./editor.js";
+import {
+  detectConfig,
+  EnergyOverviewBalanceCardEditor,
+  EnergyOverviewCardEditor,
+  EnergyOverviewMiniCardEditor,
+} from "./editor.js";
 import { svgIcon } from "./icons.js";
 import "./assets.js";
 import { animateSky } from "./flowstyles.js";
@@ -549,14 +555,97 @@ export class EnergyOverviewMiniCard extends HTMLElement {
   }
 }
 
+/**
+ * Balance card: today's home consumption as a ring split by grid / battery / solar, the grid on the left and the
+ * own energy on the right, wires with a moving light for what flows right now. Opens the main card like the mini card.
+ */
+export class EnergyOverviewBalanceCard extends EnergyOverviewMiniCard {
+  static getConfigElement() {
+    return document.createElement("energy-overview-balance-card-editor");
+  }
+
+  static async getStubConfig(hass) {
+    return { ...(await EnergyOverviewCard.getStubConfig(hass)), type: "custom:energy-overview-balance-card" };
+  }
+
+  setConfig(config) {
+    this._today = undefined;
+    this._shape = null;
+    super.setConfig(config);
+  }
+
+  getCardSize() {
+    return this._expanded ? 3 + 18 : 3;
+  }
+
+  async _loadToday() {
+    if (!this._hass || !this._config) return;
+    const range = periodRange("day", new Date(), { tz: this._tz });
+    const energy = await fetchPeriodEnergy(this._hass, this._cache, this._config, this._prefs, range).catch(() => null);
+    const today = energy?.hasData ? energy.total : null;
+    if (JSON.stringify(today) !== JSON.stringify(this._today)) {
+      this._today = today;
+      this._render();
+    }
+  }
+
+  _render() {
+    if (!this._config || !this._hass) return;
+    const lang = langOf(this._hass, this._config);
+    const t = translator(lang);
+    const live = readLive(this._hass, this._config, this._live);
+    const first = !this.shadowRoot.firstChild;
+    if (first) {
+      this.shadowRoot.innerHTML = `<style>${STYLE}${BALANCE_STYLE}.wrap{display:flex;flex-direction:column;gap:8px}</style><div class="wrap"><ha-card class="bal" data-open role="button" tabindex="0"></ha-card><div data-inline></div></div>`;
+      this.shadowRoot.addEventListener("click", (e) => {
+        const open = e.target.closest?.("[data-open]");
+        if (open) this._open(open);
+      });
+      this.shadowRoot.addEventListener("keydown", (e) => {
+        if ((e.key === "Enter" || e.key === " ") && e.target.matches?.("[data-open]")) {
+          e.preventDefault();
+          this._open(e.target);
+        }
+      });
+    }
+    const card = this.shadowRoot.querySelector(".bal");
+    const out = renderBalance(this._today, live, {
+      t,
+      lang,
+      threshold: Number(this._config.threshold_w) || 0,
+      animations: this._config.animations !== false,
+      byPower: this._config.animate_by_power !== false,
+      // The ring sweeps in once, when the day's numbers first arrive.
+      intro: !!this._today && !this._swept,
+    });
+    if (this._today) this._swept = true;
+    let patched = false;
+    if (out.shape === this._shape) {
+      const fresh = document.createElement("div");
+      fresh.innerHTML = out.html;
+      patched = patchBalance(card, fresh);
+    }
+    if (!patched) card.innerHTML = out.html;
+    this._shape = out.shape;
+    card.setAttribute("aria-label", `${out.label}. ${t("open")}`);
+    if (this._config.popup === false) card.setAttribute("aria-expanded", String(this._expanded));
+    else card.setAttribute("aria-haspopup", "dialog");
+    this._lastSig = this._sig();
+  }
+}
+
 if (!customElements.get("energy-overview-card")) customElements.define("energy-overview-card", EnergyOverviewCard);
 if (!customElements.get("energy-overview-mini-card"))
   customElements.define("energy-overview-mini-card", EnergyOverviewMiniCard);
+if (!customElements.get("energy-overview-balance-card"))
+  customElements.define("energy-overview-balance-card", EnergyOverviewBalanceCard);
 
 if (!customElements.get("energy-overview-card-editor"))
   customElements.define("energy-overview-card-editor", EnergyOverviewCardEditor);
 if (!customElements.get("energy-overview-mini-card-editor"))
   customElements.define("energy-overview-mini-card-editor", EnergyOverviewMiniCardEditor);
+if (!customElements.get("energy-overview-balance-card-editor"))
+  customElements.define("energy-overview-balance-card-editor", EnergyOverviewBalanceCardEditor);
 
 window.customCards = window.customCards || [];
 for (const card of [
@@ -569,6 +658,11 @@ for (const card of [
     type: "energy-overview-mini-card",
     name: "Energy Overview Mini Card",
     description: "One line: battery, status, PV, grid and today's self-sufficiency; opens the full card.",
+  },
+  {
+    type: "energy-overview-balance-card",
+    name: "Energy Overview Balance Card",
+    description: "Today's home consumption as a ring by source, grid and own energy beside it; opens the full card.",
   },
 ]) {
   if (!window.customCards.some((c) => c.type === card.type))

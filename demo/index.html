@@ -81,7 +81,7 @@
         for (const col of ["light", "dark"]) {
           const el = document.getElementById(col);
           el.replaceChildren();
-          for (const type of ["energy-overview-card", "energy-overview-mini-card"]) {
+          for (const type of ["energy-overview-card", "energy-overview-mini-card", "energy-overview-balance-card"]) {
             const card = document.createElement(type);
             const config = ui.minimal.checked ? {} : CONFIG;
             card.setConfig({

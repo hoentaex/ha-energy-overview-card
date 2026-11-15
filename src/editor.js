@@ -391,6 +391,7 @@ export class EnergyOverviewMiniCardEditor extends EditorBase {
     return true;
   }
 }
+export class EnergyOverviewBalanceCardEditor extends EnergyOverviewMiniCardEditor {}
 
 // ---------------------------------------------------------------------------
 // New cards: what the Energy dashboard and the states reveal

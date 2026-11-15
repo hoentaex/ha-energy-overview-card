@@ -236,9 +236,25 @@ name: Energie
 |---|---|
 | <img src="screenshots/mini-light.png" alt="Mini-Karte" width="420"><br><img src="screenshots/mini-dark.png" alt="Mini-Karte, dunkel" width="420"> | <img src="screenshots/popup-dark.png" alt="Hauptkarte als Dialog" width="300"> |
 
+### Bilanz-Karte
+
+`custom:energy-overview-balance-card` ist die zweite kleine Karte: in der Mitte der Hausverbrauch von heute als Ring,
+aufgeteilt nach Netz, Akku und Solar, links der Strom aus dem Netz, rechts der Eigenstrom (Solar und Akku). Fließt
+gerade Strom, läuft ein Lichtpunkt über die Linie zum Ring (beim Einspeisen vom Ring weg, in Blau); der Ring baut sich
+beim Laden einmal auf. Ein Klick öffnet wie bei der Mini-Karte die Hauptkarte. Sie nimmt dieselben Optionen.
+
+```yaml
+type: custom:energy-overview-balance-card
+# … dieselben Optionen wie die Hauptkarte
+```
+
+| Hell | Dunkel |
+|---|---|
+| <img src="screenshots/balance-light.png" alt="Bilanz-Karte" width="420"> | <img src="screenshots/balance-dark.png" alt="Bilanz-Karte, dunkel" width="420"> |
+
 ### Visueller Editor
 
-Beide Karten lassen sich komplett im visuellen Editor einrichten: Entity-Auswahl für die Live-Werte, Statistik-Auswahl
+Alle Karten lassen sich komplett im visuellen Editor einrichten: Entity-Auswahl für die Live-Werte, Statistik-Auswahl
 für die Zeiträume (leer = aus dem Energie-Dashboard), Abschnitte, Darstellung und ein Bereich **Erweitert**.
 Optionen mit Standardwert landen nicht im YAML. Eine neue Karte übernimmt die Leistungssensoren aus dem
 Energie-Dashboard und sucht selbst einen Ladestand-Sensor, die Tagesprognose und eine Wetter-Entity.
@@ -297,7 +313,11 @@ type: custom:energy-overview-card
 **Mini card:** `custom:energy-overview-mini-card` takes the same options and shows one row (ring, name, status, PV,
 grid, today's self-sufficiency); its button opens the main card as a dialog (`popup: false` expands it below instead).
 
-**Visual editor:** both cards can be set up entirely in the UI editor; new cards take the power sensors from the
+**Balance card:** `custom:energy-overview-balance-card` shows today's home consumption as a ring split by grid,
+battery and solar, the grid on the left and the own energy on the right; a light runs along the wires while power
+flows. A click opens the main card. Same options.
+
+**Visual editor:** all cards can be set up entirely in the UI editor; new cards take the power sensors from the
 Energy dashboard and find a state-of-charge sensor, today's forecast and a weather entity by themselves.
 
 ## Development

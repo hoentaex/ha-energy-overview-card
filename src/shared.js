@@ -106,6 +106,12 @@ const STRINGS = {
     close: "Schließen",
     mini_today: "Heute",
     mini_autarky: "Autarkie {v} %",
+    bal_from_grid: "aus dem Netz",
+    bal_from_pv: "von PV",
+    bal_own: "Eigenstrom",
+    bal_home: "Haus heute",
+    bal_now: "jetzt",
+    bal_aria: "Haus heute {home}: aus dem Netz {grid}, Eigenstrom {own}",
   },
   en: {
     title: "Energy",
@@ -192,6 +198,12 @@ const STRINGS = {
     close: "Close",
     mini_today: "Today",
     mini_autarky: "Self-sufficiency {v} %",
+    bal_from_grid: "from the grid",
+    bal_from_pv: "from solar",
+    bal_own: "own energy",
+    bal_home: "home today",
+    bal_now: "now",
+    bal_aria: "Home today {home}: from the grid {grid}, own energy {own}",
   },
 };
 

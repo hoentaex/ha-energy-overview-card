@@ -179,15 +179,21 @@ function leg(pts, w, color, outward, opts) {
   const sw = Math.min(9, 5 + Math.log10(w + 1));
   const arrow = (f) => {
     const a = along(p, f);
-    return `<path class="h-arrow" filter="url(#eoc-hsoft)" d="M-13 -11 L5 0 L-13 11" transform="translate(${a.x.toFixed(1)} ${a.y.toFixed(1)}) rotate(${a.ang.toFixed(0)})"/>`;
+    const at = `transform="translate(${a.x.toFixed(1)} ${a.y.toFixed(1)}) rotate(${a.ang.toFixed(0)})"`;
+    return `<path class="h-arrow" filter="url(#eoc-hsoft)" d="M-13 -11 L5 0 L-13 11" ${at}/><path class="h-arrow-hi" d="M-13 -11 L5 0 L-13 11" ${at}/>`;
   };
   const comet =
     opts.animations === false
       ? ""
-      : `<path class="h-comet" d="${d}" pathLength="1000" stroke-width="${(sw * 0.55).toFixed(1)}" style="--dur:${dur(w, opts.byPower !== false)}s"/>`;
+      : // A glowing halo and a bright core travel together, like a light pulse in a neon tube.
+        [
+          `<path class="h-comet h-cglow" filter="url(#eoc-hglow)" d="${d}" pathLength="1000" stroke-width="${(sw * 1.6).toFixed(1)}" style="--dur:${dur(w, opts.byPower !== false)}s"/>`,
+          `<path class="h-comet" d="${d}" pathLength="1000" stroke-width="${(sw * 0.75).toFixed(1)}" style="--dur:${dur(w, opts.byPower !== false)}s"/>`,
+        ].join("");
   return `<g style="color:${color}">
-    <path class="h-glow" filter="url(#eoc-hglow)" d="${d}" stroke-width="${(sw * 3.2).toFixed(1)}"/>
-    <path class="h-line" filter="url(#eoc-hsoft)" d="${d}" stroke-width="${sw.toFixed(1)}"/>
+    <path class="h-glow" filter="url(#eoc-hglow)" d="${d}" stroke-width="${(sw * 4.4).toFixed(1)}"/>
+    <path class="h-line" filter="url(#eoc-hsoft)" d="${d}" stroke-width="${(sw * 1.25).toFixed(1)}"/>
+    <path class="h-shine" d="${d}" stroke-width="${(sw * 0.32).toFixed(1)}"/>
     ${comet}${arrow(0.5)}${arrow(0.985)}
   </g>`;
 }

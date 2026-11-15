@@ -60,6 +60,11 @@ try {
     await page.waitForTimeout(300);
     await mini.screenshot({ path: shot(`mini-${theme}`) });
     console.log(`saved screenshots/mini-${theme}.png`);
+    const bal = page.locator(`#${theme} energy-overview-balance-card`).first();
+    await bal.locator(".seg").first().waitFor();
+    await page.waitForTimeout(300);
+    await bal.screenshot({ path: shot(`balance-${theme}`) });
+    console.log(`saved screenshots/balance-${theme}.png`);
     await page.setViewportSize({ width: 760, height: 2600 });
     await mini.locator("[data-open]").click();
     const dialog = page.locator("energy-overview-dialog energy-overview-card");

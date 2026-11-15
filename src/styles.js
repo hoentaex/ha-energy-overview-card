@@ -184,10 +184,12 @@ button:focus-visible { outline: 2px solid var(--eoc-accent); outline-offset: 2px
 .scene { position: relative; aspect-ratio: 3 / 2; margin-top: -4px; }
 .scene > img, .scene > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .h-track { fill: none; stroke: rgba(255, 255, 255, 0.3); stroke-width: 4; stroke-linecap: round; }
-.h-glow { fill: none; stroke: currentColor; stroke-opacity: 0.45; stroke-linecap: round; }
+.h-glow { fill: none; stroke: currentColor; stroke-opacity: 0.7; stroke-linecap: round; }
 .h-line { fill: none; stroke: currentColor; stroke-linecap: round; }
-.h-arrow { fill: none; stroke: currentColor; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
-.h-comet { fill: none; stroke: #fff; stroke-opacity: 0.9; stroke-linecap: round; stroke-dasharray: 70 930; animation: eoc-comet var(--dur, 2s) linear infinite; }
+.h-shine { fill: none; stroke: #fff; stroke-opacity: 0.55; stroke-linecap: round; }
+.h-arrow { fill: none; stroke: currentColor; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.h-arrow-hi { fill: none; stroke: #fff; stroke-opacity: 0.7; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.h-comet { fill: none; stroke: #fff; stroke-linecap: round; stroke-dasharray: 110 890; animation: eoc-comet var(--dur, 2s) linear infinite; }
 @keyframes eoc-comet { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
 .h-bat.pulse { animation: eoc-pulse 1.6s ease-in-out infinite; }
 @keyframes eoc-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
