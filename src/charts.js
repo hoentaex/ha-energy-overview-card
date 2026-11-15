@@ -58,9 +58,9 @@ export function renderPowerChart(data, { t, lang, hidden, ariaRange }) {
     if (!vals || hidden.has(key)) return "";
     const p = pathOf(s.pct ? vals : vals.map((v) => (Number.isFinite(v) ? v / 1000 : v)), x, s.pct ? ys : y);
     if (!p.line) return "";
-    const dash = s.pct ? ' stroke-dasharray="5 3"' : "";
+    const dash = s.pct ? ' stroke-dasharray="4 3"' : "";
     return `<path d="${p.area}" fill="${s.color}" fill-opacity="${s.fill}" stroke="none"/>
-      <path d="${p.line}" fill="none" stroke="${s.color}" stroke-width="${s.pct ? 1.6 : 1.8}"${dash} vector-effect="non-scaling-stroke"/>`;
+      <path d="${p.line}" fill="none" stroke="${s.color}" stroke-width="${s.pct ? 1.1 : 1.2}"${dash} vector-effect="non-scaling-stroke"/>`;
   }).join("");
   const label = fmtNum(pmax, lang, 1);
   return {
@@ -138,7 +138,7 @@ export function renderHistory(units, opts) {
       const up = s
         ? `<div class="stack">${[
             [s.pv_to_battery, "var(--eoc-pv)"],
-            [s.grid_to_battery, "var(--eoc-imp)"],
+            [s.grid_to_battery, "var(--eoc-gridcharge)"],
           ]
             .map(([v, c]) => `<div style="height:${((v / mUp) * upH).toFixed(1)}px;--c:${c}"></div>`)
             .join("")}</div>`

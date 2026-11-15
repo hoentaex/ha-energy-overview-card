@@ -8,6 +8,7 @@ export const STYLE = `
   --eoc-bat: var(--eoc-battery-color, #5fd08a);
   --eoc-imp: var(--eoc-import-color, #ff9a5c);
   --eoc-exp: var(--eoc-export-color, #5aa9ff);
+  --eoc-gridcharge: var(--eoc-grid-charge-color, #5aa9ff);
   --eoc-house: var(--eoc-house-color, #cba6f7);
   --eoc-fc: var(--eoc-forecast-color, #94e2d5);
   --eoc-night: var(--eoc-night-color, rgba(180, 190, 254, 0.11));

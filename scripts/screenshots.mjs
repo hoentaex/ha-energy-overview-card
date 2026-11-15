@@ -7,7 +7,8 @@ import { serve } from "./serve.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const server = serve();
-const port = server.address()?.port ?? 8769;
+await new Promise((resolve, reject) => server.once("listening", resolve).once("error", reject));
+const port = server.address().port;
 const browser = await chromium.launch();
 const TIME = new Date("2026-11-14T13:20:00+01:00");
 const shot = (name) => `${root}screenshots/${name}.png`;

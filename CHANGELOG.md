@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2 (2026-11-15)
+
+- Grid charging the battery is drawn in blue (flow, battery history, legend) with its own variable
+  `--eoc-grid-charge-color`; battery → home stays green
+- README: a home consumption sensor that counts battery charging from the grid breaks the balance – leave
+  `house_power_entity` / `consumption_stat` out then; example config updated
+- Test: the live flow adds up (grid + PV = home + battery) when the home comes from the balance
+
 ## 0.1.1 (2026-11-15)
 
 - Look aligned with the Proxmox and Tibber cards: round 40 px logo in the status colour with an MDI icon, status

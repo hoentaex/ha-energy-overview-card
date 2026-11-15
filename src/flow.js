@@ -39,7 +39,7 @@ const COLORS = {
   solar_battery: "var(--eoc-pv)",
   grid_house: "var(--eoc-imp)",
   battery_house: "var(--eoc-bat)",
-  grid_battery: "var(--eoc-imp)",
+  grid_battery: "var(--eoc-gridcharge)",
 };
 
 /** Animation period: 1.6 s at the threshold, down to 0.4 s from 2 kW. */

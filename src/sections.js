@@ -254,7 +254,7 @@ export function history(ctx) {
     ],
     battery: [
       ["charged_pv", "var(--eoc-pv)"],
-      ["charged_grid", "var(--eoc-imp)"],
+      ["charged_grid", "var(--eoc-gridcharge)"],
       ["discharged", "var(--eoc-bat)"],
     ],
   }[state.mode].slice();

@@ -4,6 +4,7 @@ import { renderHistory } from "../src/charts.js";
 import { powerEntities, powerSeries } from "../src/data.js";
 import { splitSlot } from "../src/energy.js";
 import { liveFlows } from "../src/flow.js";
+import { readLive } from "../src/energy.js";
 import { translator } from "../src/shared.js";
 
 test("live flows: PV surplus charges the battery and exports the rest", () => {
@@ -23,6 +24,29 @@ test("live flows: grid charging at night", () => {
   assert.equal(f.grid_battery, 400);
   assert.equal(f.grid_house, 180);
   assert.equal(f.solar_battery, 0);
+});
+
+test("live flows balance when the home is taken from the balance (Haus A, 15.11. 13:01)", () => {
+  const st = (v) => ({ state: String(v), attributes: { unit_of_measurement: "W" } });
+  const hass = { states: { pv: st(73), imp: st(500), exp: st(0), bat: st(381) } };
+  const l = readLive(hass, {
+    solar_power_entity: "pv",
+    grid_import_power_entity: "imp",
+    grid_export_power_entity: "exp",
+    battery_power_entity: "bat",
+  });
+  assert.equal(l.house, 192);
+  const f = liveFlows(l);
+  assert.deepEqual(f, {
+    solar_grid: 0,
+    solar_house: 0,
+    solar_battery: 73,
+    grid_house: 192,
+    battery_house: 0,
+    grid_battery: 308,
+  });
+  // what goes in comes out
+  assert.equal(l.solar + l.grid_import, l.house + l.battery_charge);
 });
 
 test("power entities from config, falling back to the prefs' stat_rate", () => {

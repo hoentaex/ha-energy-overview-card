@@ -57,6 +57,12 @@ Aufbau und Look orientieren sich an den Karten von [juju35](https://github.com/j
 | Solar-Prognose im Energie-Dashboard (z. B. [Forecast.Solar](https://www.home-assistant.io/integrations/forecast_solar/)) | Prognose heute | optional |
 | Ein Energie-Sensor für die Akkuladung **aus dem Netz** | Aufteilung der Ladung in PV / Netz | optional |
 
+> [!IMPORTANT]
+> **Hausverbrauch nur, wenn er wirklich nur das Haus misst.** Viele selbst gebaute „Verbrauch“-Sensoren rechnen
+> Netzbezug + PV und zählen dabei die **Akkuladung aus dem Netz** als Hausverbrauch mit. Dann geht der Fluss nicht auf
+> (Netz + PV ≠ Haus + Akku) und die Netzladung steht im Verlauf doppelt. Im Zweifel `house_power_entity` und
+> `consumption_stat` weglassen – die Karte rechnet den Hausverbrauch dann aus der Bilanz, und alles geht auf.
+
 Fehlt eine Entity, ist sie `unavailable` oder gibt es keine Statistik, blendet die Karte den Wert oder Abschnitt aus
 bzw. zeigt „–“ – sie bricht nie komplett.
 
@@ -115,12 +121,11 @@ type: custom:energy-overview-card
 name: Energie
 subtitle: Balkonkraftwerk · Solarbank 2 E1600 AC
 solar_power_entity: sensor.pv_power_from_solar
-grid_power_entity: sensor.netzleistung_kombiniert
+grid_import_power_entity: sensor.pv_power_from_grid
+grid_export_power_entity: sensor.einspeisung_positiv
 battery_power_entity: sensor.solarbank_2_e1600_ac_akkuleistung
-house_power_entity: sensor.stromverbrauch_gesamt_real
 soc_entity: sensor.pv_batterie_soc
 capacity_kwh: 1.6
-consumption_stat: sensor.stromverbrauch_gesamt_real_daily
 battery_grid_charge_stat: sensor.akkuladung_von_netz_energy_daily
 forecast_today_entity: sensor.energy_production_today
 ```
@@ -168,7 +173,7 @@ die addiert wird:
 | `language` | `de` / `en` | Sprache von Home Assistant |
 
 **Farben** lassen sich per Theme oder `card_mod` über CSS-Variablen ändern: `--eoc-pv-color` (#f5b942),
-`--eoc-battery-color` (#5fd08a), `--eoc-import-color` (#ff9a5c), `--eoc-export-color` (#5aa9ff),
+`--eoc-battery-color` (#5fd08a), `--eoc-import-color` (#ff9a5c), `--eoc-export-color` (#5aa9ff), `--eoc-grid-charge-color` (#5aa9ff, Netz lädt Akku),
 `--eoc-house-color` (#cba6f7), `--eoc-forecast-color` (#94e2d5), `--eoc-night-color` (rgba(180,190,254,.11)),
 `--eoc-night-icon-color` (#b4befe), `--eoc-accent-color` (Standard: `--primary-color`). Alles andere kommt aus dem Theme.
 
@@ -222,6 +227,10 @@ A Lovelace card for a **PV system with a home battery**: live energy flow, balan
 export), self-sufficiency, self-consumption and CO₂ saved; the day's power chart with a crosshair; and a history of
 consumption (with night blocks), solar (with today's forecast) and battery (charge up, discharge down, state-of-charge
 line). **Not included:** control logic, costs and tariffs.
+
+**Home consumption:** only set `house_power_entity` / `consumption_stat` when the sensor measures the home alone.
+Sensors built as grid import + PV often count battery charging from the grid as home consumption; then the flow does
+not add up. Leave both out and the card takes the home from the balance.
 
 **You need:** Home Assistant 2024.8+ and the **Energy dashboard** set up (or your own energy sensors with statistics).
 Power sensors, a state-of-charge sensor and the battery capacity are recommended; without power sensors the card uses

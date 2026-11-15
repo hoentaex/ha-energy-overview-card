@@ -15,6 +15,7 @@ const THEME_VARS = [
   "--eoc-battery-color",
   "--eoc-import-color",
   "--eoc-export-color",
+  "--eoc-grid-charge-color",
   "--eoc-house-color",
   "--eoc-forecast-color",
   "--eoc-night-color",
