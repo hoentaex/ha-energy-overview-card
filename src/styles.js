@@ -182,7 +182,7 @@ button:focus-visible { outline: 2px solid var(--eoc-accent); outline-offset: 2px
 .sky-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, transparent 26%); }
 .fs-house { padding-bottom: 0; }
 .scene { position: relative; aspect-ratio: 3 / 2; margin-top: -4px; }
-.scene img, .scene svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.scene > img, .scene > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .h-track { fill: none; stroke: rgba(255, 255, 255, 0.3); stroke-width: 4; stroke-linecap: round; }
 .h-glow { fill: none; stroke: currentColor; stroke-opacity: 0.45; stroke-linecap: round; }
 .h-line { fill: none; stroke: currentColor; stroke-linecap: round; }
@@ -197,7 +197,7 @@ button:focus-visible { outline: 2px solid var(--eoc-accent); outline-offset: 2px
 .h-chip small { display: block; font-size: 10.5px; line-height: 1.2; opacity: 0.85; }
 .h-chip b { display: block; font-size: 13.5px; line-height: 1.25; font-variant-numeric: tabular-nums; }
 .bands { position: relative; aspect-ratio: 380 / 230; margin: 4px 0 6px; }
-.bands svg, .ringstage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bands > svg, .ringstage > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .band { opacity: 0.42; }
 .nlab { position: absolute; transform: translateY(-50%); display: flex; flex-direction: column; gap: 1px; line-height: 1.2; }
 .nlab.l { text-align: right; align-items: flex-end; }

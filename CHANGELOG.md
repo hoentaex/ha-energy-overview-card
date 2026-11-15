@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 (2026-11-15)
+
+- Ring: the icons of solar, battery and grid sit in the middle of their circles again (the rule for the ring graphic
+  also caught the icons and pinned them to the top left)
+
 ## 0.2.0 (2026-11-15)
 
 - **Flow styles** (`flow_style`), the ellipse stays the default:
