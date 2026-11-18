@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.2 (2026-11-18)
+
+- Illustrated header: the ground strip is orange while the grid supplies the home, the card's own import colour (it was
+  blue), so it matches the status pill and the grid lines.
+
 ## 0.4.1 (2026-11-18)
 
 - House scene (`flow_style: house`): a new house, a white two-storey house with two balconies, PV on the roof, the meter

@@ -47,7 +47,7 @@ test("the sun on its arc: left at sunrise, at the top at mid-day, right at sunse
   assert.ok(Math.abs(right.x - 192) < 1e-9);
 });
 
-test("ground strip: yellow for PV, blue for the grid, green for the battery, grey when nothing flows", () => {
+test("ground strip: yellow for PV, orange for the grid, green for the battery, grey when nothing flows", () => {
   assert.equal(groundOf({ solar: 400, battery_charge: 200 }, "pv_charging", 10), "pv");
   assert.equal(groundOf({ grid_export: 300, solar: 600 }, "export", 10), "pv");
   assert.equal(groundOf({ grid_import: 500 }, "grid_house", 10), "imp");

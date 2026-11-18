@@ -22,7 +22,7 @@ export const isNight = (hass, config) => {
 
 /**
  * Ground strip colour from the live values: pv (yellow) while PV covers the home or feeds the battery or the grid,
- * imp (blue) while the grid supplies the home, bat (green) while the battery does, idle (grey) when nothing flows.
+ * imp (orange, the card's import colour) while the grid supplies the home, bat (green) while the battery does, idle (grey) when nothing flows.
  */
 export function groundOf(live, status, threshold = 10) {
   const on = (v) => Number.isFinite(v) && v > threshold;
@@ -300,8 +300,8 @@ ha-card > .sec > .banner, ha-card > .banner { margin: -16px -16px 0; }
 .banner.night .ground { --t: rgba(255,255,255,.22); }
 .ground.g-pv { background-image: ${tick("#ffd978", "#f2a516")}; box-shadow: inset 0 2px 0 #ffe9a8; }
 .night .ground.g-pv { background-image: ${tick("#6b5420", "#4d3a12")}; box-shadow: inset 0 2px 0 #7d6428; }
-.ground.g-imp { background-image: ${tick("#8cc0f5", "#2f80ed")}; box-shadow: inset 0 2px 0 #b9d8fa; }
-.night .ground.g-imp { background-image: ${tick("#1f3e66", "#16304f")}; box-shadow: inset 0 2px 0 #2a4d7a; }
+.ground.g-imp { background-image: ${tick("#ffc29a", "#ff8a4c")}; box-shadow: inset 0 2px 0 #ffd9bd; }
+.night .ground.g-imp { background-image: ${tick("#6a3a22", "#4d2814")}; box-shadow: inset 0 2px 0 #7d4a2c; }
 .ground.g-bat { background-image: ${tick("#8fd47a", "#43a047")}; box-shadow: inset 0 2px 0 #b5e3a5; }
 .night .ground.g-bat { background-image: ${tick("#2a5a2c", "#1c4220")}; box-shadow: inset 0 2px 0 #356a38; }
 .ground.g-idle { background-image: ${tick("#d3d8de", "#aab2bb")}; box-shadow: inset 0 2px 0 #e6e9ed; }

@@ -186,7 +186,7 @@ die addiert wird:
 ### Kopf-Bilder
 
 Der illustrierte Kopf zeigt eines von drei Bildern (`illustration_scene`), darunter einen Bodenstreifen in der
-Zustandsfarbe: gelb bei PV (Haus, Akku oder Einspeisung), blau bei Netzbezug, grün wenn der Akku das Haus versorgt,
+Zustandsfarbe: gelb bei PV (Haus, Akku oder Einspeisung), orange bei Netzbezug, grün wenn der Akku das Haus versorgt,
 grau wenn nichts fließt.
 
 - **Sonnenbogen** (`sun`, Standard): der Tagbogen von Sonnenaufgang bis -untergang (aus `sun.sun`, sonst aus dem
@@ -302,7 +302,7 @@ line). **Not included:** control logic, costs and tariffs.
 **Illustrated header:** a banner with one of three pictures (`illustration_scene`): `sun` (the day arc with the sun at
 its real position, PV power now and today's yield vs. the forecast; default), `balcony` (two panels on a balcony
 railing feeding the Solarbank, battery LEDs) or `curve` (today's PV production as a landscape with the forecast). The
-ground strip shows the state: yellow solar, blue grid import, green battery, grey idle. `illustration: false` keeps the
+ground strip shows the state: yellow solar, orange grid import, green battery, grey idle. `illustration: false` keeps the
 classic header; `illustration_theme: day | night` forces the picture, else it follows the dark theme.
 
 **Flow styles:** `flow_style` picks the live flow: `ellipse` (default), `house` (a 3D house on a weather sky; all lines
