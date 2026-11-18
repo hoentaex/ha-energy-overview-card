@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0 (2026-11-18)
+
+- **Illustrated header** on the main card, the mini card and the dialog, in the style of juju35's cards: a 90 px banner
+  with the title, the status pill and the subtitle on the sky, a picture at the right and a 10 px ground strip in the
+  state colour (yellow solar, blue grid import, green battery, grey when nothing flows).
+- Three pictures to choose from with `illustration_scene`: `sun` (default; the day arc from sunrise to sunset with the
+  sun at its real position, PV power now and today's yield against the forecast, moon and dashed arc at night),
+  `balcony` (two panels on a balcony railing, power running to the Solarbank while the panels produce, five LEDs for
+  the battery level) and `curve` (today's PV production from the hourly statistics as a landscape, the forecast dashed,
+  the sun on the curve now).
+- Night picture with Home Assistant's dark theme; `illustration_theme: day | night` forces it, `illustration: false`
+  keeps the classic header. All three options in the visual editor of the main and the mini card.
+- The status pill follows the title when it fits, else goes under the subtitle (its dot alone when there is no room).
+- Mini card: the banner with a frosted open button, battery, PV, grid and today's self-sufficiency under it.
+
 ## 0.3.0 (2026-11-15)
 
 - **Balance card** `custom:energy-overview-balance-card`: today's home consumption as a ring split by grid, battery

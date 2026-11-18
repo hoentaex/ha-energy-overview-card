@@ -31,13 +31,23 @@ import { svgIcon } from "./icons.js";
 import "./assets.js";
 import { animateSky } from "./flowstyles.js";
 import "./popup.js";
-import { defaultSel, historyReadout, historyUnits, powerTitle, RENDERERS, statusPill } from "./sections.js";
+import {
+  defaultSel,
+  historyReadout,
+  historyUnits,
+  powerTitle,
+  RENDERERS,
+  STATUS_COLOR,
+  statusPill,
+} from "./sections.js";
 import { DEFAULTS, esc, fmtPower, HISTORY_MODES, langOf, SECTIONS, translator } from "./shared.js";
-import { STYLE } from "./styles.js";
+import { BANNER_STYLE, fitPill, renderBanner } from "./banner.js";
+import { STYLE as BASE_STYLE } from "./styles.js";
 import { daySun } from "./sun.js";
 import { tzOf } from "./tz.js";
 
 const VERSION = __VERSION__;
+const STYLE = BASE_STYLE + BANNER_STYLE;
 const TICK = 60e3;
 
 // Config keys holding entity ids: their states decide when the live part re-renders.
@@ -101,6 +111,8 @@ export class EnergyOverviewCard extends HTMLElement {
   disconnectedCallback() {
     clearInterval(this._timer);
     this._timer = null;
+    this._ro?.disconnect();
+    this._ro = null;
   }
 
   getCardSize() {
@@ -219,6 +231,16 @@ export class EnergyOverviewCard extends HTMLElement {
         return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
       });
     }
+    // Today's production for the banner, kept while another period is shown.
+    if (range.kind === "day" && current && fresh && ctx.energy?.hasData)
+      this._todayBanner = {
+        slots: range.slots,
+        solar: ctx.energy.split.map((x) => (x ? x.solar : null)),
+        forecast: this._data.forecast || null,
+        total: ctx.energy.total.solar ?? null,
+        forecastKwh: ctx.forecastToday,
+      };
+    ctx.today = this._todayBanner || null;
     ctx.units = historyUnits(ctx);
     ctx.sel = this._state.sel ?? defaultSel(ctx, ctx.units);
     return ctx;
@@ -236,6 +258,17 @@ export class EnergyOverviewCard extends HTMLElement {
     this._liveSig = this._liveSignature();
     this._bind();
     animateSky(this.shadowRoot);
+    this._fitBanner();
+  }
+
+  /** The banner's pill is measured after each render and whenever the card is resized. */
+  _fitBanner() {
+    if (this._config.illustration === false) return;
+    fitPill(this.shadowRoot);
+    if (!this._ro && typeof ResizeObserver !== "undefined") {
+      this._ro = new ResizeObserver(() => fitPill(this.shadowRoot));
+      this._ro.observe(this);
+    }
   }
 
   /** Selector of the focused control, so keyboard focus survives a re-render. */
@@ -252,7 +285,8 @@ export class EnergyOverviewCard extends HTMLElement {
     const ids = liveKeys(this._config, this._live);
     const sun = this._hass?.states?.["sun.sun"];
     const weather = this._config.weather_entity ? this._hass?.states?.[this._config.weather_entity]?.state : "";
-    return `${ids.map((id) => this._hass?.states?.[id]?.state).join("|")}${sun?.state || ""}${Math.round(Number(sun?.attributes?.elevation) || 0)}${weather || ""}`;
+    const dark = this._hass?.themes?.darkMode ? "dark" : "light";
+    return `${dark}${ids.map((id) => this._hass?.states?.[id]?.state).join("|")}${sun?.state || ""}${Math.round(Number(sun?.attributes?.elevation) || 0)}${weather || ""}`;
   }
 
   _maybeRenderLive() {
@@ -277,6 +311,7 @@ export class EnergyOverviewCard extends HTMLElement {
       }
     }
     animateSky(this.shadowRoot);
+    this._fitBanner();
     if (focus === "[data-close]") this.shadowRoot.querySelector(focus)?.focus();
     this._liveSig = this._liveSignature();
   }
@@ -442,10 +477,12 @@ export class EnergyOverviewMiniCard extends HTMLElement {
   disconnectedCallback() {
     clearInterval(this._timer);
     this._timer = null;
+    this._ro?.disconnect();
+    this._ro = null;
   }
 
   getCardSize() {
-    return this._expanded ? 1 + 18 : 1;
+    return this._expanded ? 1 + 18 : this._config?.illustration !== false ? 3 : 1;
   }
 
   getGridOptions() {
@@ -469,18 +506,40 @@ export class EnergyOverviewMiniCard extends HTMLElement {
   async _loadToday() {
     if (!this._hass || !this._config) return;
     const range = periodRange("day", new Date(), { tz: this._tz });
-    const energy = await fetchPeriodEnergy(this._hass, this._cache, this._config, this._prefs, range).catch(() => null);
+    const [energy, forecast] = await Promise.all([
+      fetchPeriodEnergy(this._hass, this._cache, this._config, this._prefs, range).catch(() => null),
+      this._config.illustration !== false
+        ? fetchForecast(this._hass, this._cache, range, forecastEntries(this._prefs)).catch(() => null)
+        : null,
+    ]);
     const autarky = energy?.hasData ? energy.total.autarky : null;
-    if (autarky !== this._autarky) {
+    // Today's production for the banner (sun readout, day curve).
+    const fcEntity = Number.parseFloat(this._hass?.states?.[this._config.forecast_today_entity]?.state);
+    const fcSum = forecast ? forecast.reduce((a, b) => a + b, 0) : null;
+    const today = energy?.hasData
+      ? {
+          slots: range.slots,
+          solar: energy.split.map((x) => (x ? x.solar : null)),
+          forecast: forecast || null,
+          total: energy.total.solar ?? null,
+          forecastKwh: Number.isFinite(fcEntity) ? fcEntity : fcSum > 0 ? fcSum : null,
+        }
+      : null;
+    const todaySig = JSON.stringify([today?.solar, today?.forecast, today?.forecastKwh]);
+    if (autarky !== this._autarky || todaySig !== this._todaySig) {
       this._autarky = autarky;
+      this._todayBanner = today;
+      this._todaySig = todaySig;
       this._render();
     }
   }
 
   _sig() {
-    return liveKeys(this._config, this._live)
+    const dark = this._hass?.themes?.darkMode ? "dark" : "light";
+    const sun = this._hass?.states?.["sun.sun"];
+    return `${dark}|${sun?.state || ""}|${liveKeys(this._config, this._live)
       .map((id) => this._hass?.states?.[id]?.state)
-      .join("|");
+      .join("|")}`;
   }
 
   _render() {
@@ -503,7 +562,10 @@ export class EnergyOverviewMiniCard extends HTMLElement {
     const btn = inline
       ? `<button type="button" class="zoom" data-open aria-expanded="${this._expanded}" aria-label="${esc(t("open"))}">${this._expanded ? collapseIcon : expandIcon}</button>`
       : `<button type="button" class="zoom" data-open aria-haspopup="dialog" aria-label="${esc(t("open"))}">${expandIcon}</button>`;
-    const row = `<ha-card class="mini">
+    const row =
+      this._config.illustration !== false
+        ? this._bannerRow({ lang, t, live, status, soc, grid, autarky, btn })
+        : `<ha-card class="mini">
       <div class="socring">
         <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
           <circle cx="23" cy="23" r="19" fill="none" stroke="var(--eoc-line)" stroke-width="4"/>
@@ -521,15 +583,53 @@ export class EnergyOverviewMiniCard extends HTMLElement {
       </div>
       ${btn}
     </ha-card>`;
-    if (!this.shadowRoot.firstChild) {
-      this.shadowRoot.innerHTML = `<style>${STYLE}.wrap{display:flex;flex-direction:column;gap:8px}</style><div class="wrap"><div data-row></div><div data-inline></div></div>`;
-      this.shadowRoot.addEventListener("click", (e) => {
-        const open = e.target.closest?.("[data-open]");
-        if (open) this._open(open);
-      });
-    }
+    this._ensureShell();
     this.shadowRoot.querySelector("[data-row]").innerHTML = row;
     this._lastSig = this._sig();
+    if (this._config.illustration !== false) {
+      fitPill(this.shadowRoot);
+      if (!this._ro && typeof ResizeObserver !== "undefined") {
+        this._ro = new ResizeObserver(() => fitPill(this.shadowRoot));
+        this._ro.observe(this);
+      }
+    }
+  }
+
+  /** The mini card with the banner: the banner (open button in its corner), then SoC, PV, grid and today's autarky. */
+  _bannerRow({ lang, t, live, status, soc, grid, autarky, btn }) {
+    const banner = renderBanner({
+      hass: this._hass,
+      config: this._config,
+      live,
+      status,
+      today: this._todayBanner || null,
+      t,
+      lang,
+      tz: this._tz,
+      logo: this._config.icon ? `<ha-icon icon="${esc(this._config.icon)}"></ha-icon>` : svgIcon("flash"),
+      color: STATUS_COLOR[status] || "var(--eoc-pv)",
+      name: this._config.name || t("title"),
+      sub: this._config.subtitle,
+      pill: statusPill({ status, t }),
+      button: btn,
+    });
+    return `<ha-card class="mini-b">${banner}
+      <div class="row2">
+        <span><b>${esc(t("battery"))}</b> <span class="socmini" style="color:${soc === null ? "inherit" : socColor(soc)}">${soc === null ? "–" : `${Math.round(soc)} %`}</span></span>
+        <span><b class="tx-pv">${esc(t("pv"))}</b> ${esc(fmtPower(live.solar, lang))}</span>
+        ${grid}
+        ${autarky}
+      </div>
+    </ha-card>`;
+  }
+
+  _ensureShell() {
+    if (this.shadowRoot.firstChild) return;
+    this.shadowRoot.innerHTML = `<style>${STYLE}.wrap{display:flex;flex-direction:column;gap:8px}</style><div class="wrap"><div data-row></div><div data-inline></div></div>`;
+    this.shadowRoot.addEventListener("click", (e) => {
+      const open = e.target.closest?.("[data-open]");
+      if (open) this._open(open);
+    });
   }
 
   _open(opener) {

@@ -173,12 +173,34 @@ die addiert wird:
 | `animations` | Flussanimation (respektiert `prefers-reduced-motion`) | `true` |
 | `animate_by_power` | Animationstempo nach Leistung | `true` |
 | `popup` | nur Mini-Karte: Hauptkarte als Dialog (`false` = darunter aufklappen) | `true` |
+| `illustration` | Illustrierter Kopf (Banner mit Bild und Bodenstreifen in der Zustandsfarbe); `false` = schlichter Kopf | `true` |
+| `illustration_scene` | Bild im Kopf: `sun` (Sonnenbogen), `balcony` (Balkonkraftwerk), `curve` (Tageskurve) | `sun` |
+| `illustration_theme` | `day` / `night` erzwingen; sonst Nachtbild beim dunklen Theme | wie das Theme |
 | `language` | `de` / `en` | Sprache von Home Assistant |
 
 **Farben** lassen sich per Theme oder `card_mod` über CSS-Variablen ändern: `--eoc-pv-color` (#f5b942),
 `--eoc-battery-color` (#5fd08a), `--eoc-import-color` (#ff9a5c), `--eoc-export-color` (#5aa9ff), `--eoc-grid-charge-color` (#5aa9ff, Netz lädt Akku),
 `--eoc-house-color` (#cba6f7), `--eoc-forecast-color` (#94e2d5), `--eoc-night-color` (rgba(180,190,254,.11)),
 `--eoc-night-icon-color` (#b4befe), `--eoc-accent-color` (Standard: `--primary-color`). Alles andere kommt aus dem Theme.
+
+### Kopf-Bilder
+
+Der illustrierte Kopf zeigt eines von drei Bildern (`illustration_scene`), darunter einen Bodenstreifen in der
+Zustandsfarbe: gelb bei PV (Haus, Akku oder Einspeisung), blau bei Netzbezug, grün wenn der Akku das Haus versorgt,
+grau wenn nichts fließt.
+
+- **Sonnenbogen** (`sun`, Standard): der Tagbogen von Sonnenaufgang bis -untergang (aus `sun.sun`, sonst aus dem
+  Standort berechnet), die Sonne an ihrer echten Position, dazu die PV-Leistung jetzt und heute erzeugt von der
+  Prognose. Nachts gestrichelt mit Mond.
+- **Balkonkraftwerk** (`balcony`): zwei Module am Geländer, Strom läuft zur Solarbank, solange PV erzeugt; ihre fünf
+  LEDs zeigen den Akkustand. Oben rechts PV-Leistung und was der Akku tut.
+- **Tageskurve** (`curve`): die PV-Erzeugung von heute als Landschaft (Stundenwerte aus der Statistik, bis jetzt
+  gefüllt), gestrichelt die Prognose, oben die Tagessumme.
+
+| Sonnenbogen | Balkonkraftwerk | Tageskurve |
+|---|---|---|
+| <img src="screenshots/header-sun-light.png" alt="Kopf mit Sonnenbogen" width="260"> | <img src="screenshots/header-balcony-light.png" alt="Kopf mit Balkonkraftwerk" width="260"> | <img src="screenshots/header-curve-light.png" alt="Kopf mit Tageskurve" width="260"> |
+| <img src="screenshots/header-sun-dark.png" alt="Kopf mit Sonnenbogen, dunkel" width="260"> | <img src="screenshots/header-balcony-dark.png" alt="Kopf mit Balkonkraftwerk, dunkel" width="260"> | <img src="screenshots/header-curve-dark.png" alt="Kopf mit Tageskurve, dunkel" width="260"> |
 
 ### Energiefluss-Darstellungen
 
@@ -276,6 +298,12 @@ A Lovelace card for a **PV system with a home battery**: live energy flow, balan
 export), self-sufficiency, self-consumption and CO₂ saved; the day's power chart with a crosshair; and a history of
 consumption (with night blocks), solar (with today's forecast) and battery (charge up, discharge down, state-of-charge
 line). **Not included:** control logic, costs and tariffs.
+
+**Illustrated header:** a banner with one of three pictures (`illustration_scene`): `sun` (the day arc with the sun at
+its real position, PV power now and today's yield vs. the forecast; default), `balcony` (two panels on a balcony
+railing feeding the Solarbank, battery LEDs) or `curve` (today's PV production as a landscape with the forecast). The
+ground strip shows the state: yellow solar, blue grid import, green battery, grey idle. `illustration: false` keeps the
+classic header; `illustration_theme: day | night` forces the picture, else it follows the dark theme.
 
 **Flow styles:** `flow_style` picks the live flow: `ellipse` (default), `house` (a 3D house on a weather sky; all lines
 run through the meter box, horizontal and vertical with round corners, glowing in the colour of their flow with arrows;

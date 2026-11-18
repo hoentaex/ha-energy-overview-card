@@ -56,7 +56,7 @@ try {
       await card.locator('[data-act="mode"][data-v="consumption"]').click();
     }
     const mini = page.locator(`#${theme} energy-overview-mini-card`).first();
-    await mini.locator(".mini").waitFor();
+    await mini.locator(".mini, .mini-b").first().waitFor();
     await page.waitForTimeout(300);
     await mini.screenshot({ path: shot(`mini-${theme}`) });
     console.log(`saved screenshots/mini-${theme}.png`);
@@ -66,13 +66,25 @@ try {
     await bal.screenshot({ path: shot(`balance-${theme}`) });
     console.log(`saved screenshots/balance-${theme}.png`);
     await page.setViewportSize({ width: 760, height: 2600 });
-    await mini.locator("[data-open]").click();
+    // A dispatched click: the mini card re-renders its row (and the button in the banner) as the demo ticks.
+    await mini.locator("[data-open]").dispatchEvent("click");
     const dialog = page.locator("energy-overview-dialog energy-overview-card");
     await dialog.locator(".cols").waitFor();
     await page.waitForTimeout(300);
     await dialog.screenshot({ path: shot(`popup-${theme}`) });
     console.log(`saved screenshots/popup-${theme}.png`);
     await page.close();
+  }
+  // Illustrated header (illustration_scene): the banner of the main card, one per scene.
+  for (const theme of ["light", "dark"]) {
+    for (const scene of ["sun", "balcony", "curve"]) {
+      const { page, card } = await open(theme, `&scene=${scene}`);
+      await settle(card, "day");
+      await page.waitForTimeout(300);
+      await card.locator(".banner").screenshot({ path: shot(`header-${scene}-${theme}`) });
+      console.log(`saved screenshots/header-${scene}-${theme}.png`);
+      await page.close();
+    }
   }
   // Flow styles (flow_style): the live tile only, one scenario each.
   const FLOWS = [

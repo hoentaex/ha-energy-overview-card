@@ -6,8 +6,9 @@ import { periodLabel } from "./period.js";
 import { esc, fmtDay, fmtEnergy, fmtNum, fmtTime, fmtWeekday } from "./shared.js";
 import { nightBlocks } from "./sun.js";
 import { svgIcon } from "./icons.js";
+import { renderBanner } from "./banner.js";
 
-const STATUS_COLOR = {
+export const STATUS_COLOR = {
   grid_house: "var(--eoc-imp)",
   pv_charging: "var(--eoc-pv)",
   pv_house: "var(--eoc-pv)",
@@ -26,6 +27,19 @@ export const statusPill = (ctx) =>
 export function header(ctx) {
   const { config, t } = ctx;
   const logo = config.icon ? `<ha-icon icon="${esc(config.icon)}"></ha-icon>` : svgIcon("flash");
+  if (config.illustration !== false)
+    return renderBanner({
+      ...ctx,
+      today: ctx.today,
+      logo,
+      color: STATUS_COLOR[ctx.status] || "var(--eoc-pv)",
+      name: config.name || t("title"),
+      sub: config.subtitle,
+      pill: statusPill(ctx),
+      button: config._dialog
+        ? `<button type="button" class="zoom" data-close aria-label="${esc(t("close"))}">${svgIcon("close")}</button>`
+        : "",
+    });
   return `<div class="header">
     <div class="logo" style="--c:${STATUS_COLOR[ctx.status] || "var(--eoc-pv)"}">${logo}</div>
     <div class="titles">

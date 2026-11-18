@@ -90,6 +90,7 @@
               flow_style: ui.style.value,
               ...(ui.sky.checked ? { flow_background: "weather" } : {}),
               ...(q.get("view") ? { history_view: q.get("view") } : {}),
+              ...(q.get("scene") ? { illustration_scene: q.get("scene") } : {}),
             });
             el.append(card);
             cards.push(card);
@@ -99,7 +100,8 @@
       };
       const update = () => {
         const hass = makeHass({ lang: ui.lang.value, scenario: ui.scenario.value, weather: ui.weather.value });
-        for (const c of cards) c.hass = hass;
+        // The dark column shows the night picture of the illustrated header (a dark theme means night).
+        for (const c of cards) c.hass = c.closest("#dark") ? { ...hass, themes: { darkMode: true } } : hass;
       };
       ui.scenario.addEventListener("change", update);
       ui.lang.addEventListener("change", build);

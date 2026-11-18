@@ -36,6 +36,15 @@ const LABELS = {
     week_mode: "Woche",
     power_resolution: "Auflösung Leistungsdiagramm",
     animations: "Animationen",
+    illustration: "Illustrierter Kopf",
+    illustration_scene: "Bild im Kopf",
+    illustration_theme: "Tag / Nacht im Kopf",
+    sc_sun: "Sonnenbogen",
+    sc_balcony: "Balkonkraftwerk",
+    sc_curve: "Tageskurve",
+    th_auto: "Wie das Theme",
+    th_day: "Tag",
+    th_night: "Nacht",
     animate_by_power: "Tempo nach Leistung",
     popup: "Hauptkarte als Popup (sonst aufklappen)",
     flow_style: "Darstellung des Energieflusses",
@@ -101,6 +110,15 @@ const LABELS = {
     week_mode: "Week",
     power_resolution: "Power chart resolution",
     animations: "Animations",
+    illustration: "Illustrated header",
+    illustration_scene: "Header picture",
+    illustration_theme: "Header day / night",
+    sc_sun: "Sun arc",
+    sc_balcony: "Balcony solar",
+    sc_curve: "Day curve",
+    th_auto: "Follow the theme",
+    th_day: "Day",
+    th_night: "Night",
     animate_by_power: "Speed by power",
     popup: "Main card as a popup (else expand)",
     flow_style: "Energy flow style",
@@ -151,7 +169,7 @@ const ent = (name, domain = ["sensor"]) => ({ name, selector: { entity: { domain
 const bool = (name) => ({ name, selector: { boolean: {} } });
 const select = (name, options) => ({ name, selector: { select: { mode: "dropdown", options } } });
 
-export const editorSchema = (lang, { mini = false } = {}) => {
+export const editorSchema = (lang, { mini = false, banner = true } = {}) => {
   const L = LABELS[lang] || LABELS.en;
   return [
     {
@@ -263,6 +281,26 @@ export const editorSchema = (lang, { mini = false } = {}) => {
           name: "",
           schema: [bool("animations"), bool("animate_by_power"), ...(mini ? [bool("popup")] : [])],
         },
+        ...(banner
+          ? [
+              {
+                type: "grid",
+                name: "",
+                schema: [
+                  bool("illustration"),
+                  select(
+                    "illustration_scene",
+                    ["sun", "balcony", "curve"].map((v) => ({ value: v, label: L[`sc_${v}`] })),
+                  ),
+                  select("illustration_theme", [
+                    { value: "", label: L.th_auto },
+                    { value: "day", label: L.th_day },
+                    { value: "night", label: L.th_night },
+                  ]),
+                ],
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -380,7 +418,7 @@ class EditorBase extends HTMLElement {
     }
     if (lang !== this._schemaLang) {
       this._schemaLang = lang;
-      this._form.schema = editorSchema(lang, { mini });
+      this._form.schema = editorSchema(lang, { mini, banner: this.constructor.banner !== false });
     }
   }
 }
@@ -391,7 +429,11 @@ export class EnergyOverviewMiniCardEditor extends EditorBase {
     return true;
   }
 }
-export class EnergyOverviewBalanceCardEditor extends EnergyOverviewMiniCardEditor {}
+export class EnergyOverviewBalanceCardEditor extends EnergyOverviewMiniCardEditor {
+  static get banner() {
+    return false;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // New cards: what the Energy dashboard and the states reveal
