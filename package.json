@@ -1,6 +1,6 @@
 {
   "name": "ha-energy-overview-card",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Lovelace card for Home Assistant: live energy flow, balance and history (day / week / month) of a PV system with a home battery in one card.",
   "private": true,
   "type": "module",

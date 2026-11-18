@@ -105,34 +105,36 @@ const dur = (w, byPower) => (byPower ? Math.max(1.2, 4 - Math.log10(w + 1) * 0.9
 
 // ---------- house scene ----------
 
-// Pixels of the 1536 × 1024 render. Each leg runs from its node to the meter box (the hub), listed node → hub.
-const HOUSE = {
+// Pixels of the 1536 × 1024 render. Each leg runs from its node to the meter box (the hub), listed node → hub. The
+// night render places the meter box and the battery 12 px further right than the day one: `shift` moves the points
+// that end on them.
+const houseGeometry = (shift) => ({
   legs: {
     solar: [
-      [850, 334],
-      [850, 545],
-      [940, 545],
+      [1010, 336],
+      [1010, 585],
+      [930 + shift, 585],
+      [930 + shift, 606],
     ],
     house: [
-      [735, 630],
-      [860, 630],
-      [860, 578],
-      [940, 578],
+      [720, 646],
+      [893 + shift, 646],
     ],
     battery: [
-      [1040, 740],
-      [985, 740],
-      [985, 600],
+      [1050 + shift, 715],
+      [1050 + shift, 668],
+      [955 + shift, 668],
     ],
     grid: [
-      [1403, 315],
-      [1403, 555],
-      [1003, 555],
+      [1360, 332],
+      [1360, 628],
+      [955 + shift, 628],
     ],
   },
-  chips: { solar: [770, 62, "c"], house: [560, 905, "c"], battery: [1160, 915, "c"], grid: [1500, 170, "r"] },
-  batIcon: [1100, 734, 36, 72],
-};
+  chips: { solar: [930, 70, "c"], house: [470, 880, "c"], battery: [1190 + shift, 890, "c"], grid: [1500, 200, "r"] },
+  batIcon: [994 + shift, 816, 32, 67],
+});
+const HOUSES = { day: houseGeometry(0), night: houseGeometry(12) };
 
 /** Orthogonal polyline → path with rounded corners. */
 export function roundPath(pts, r = 24) {
@@ -198,7 +200,7 @@ function leg(pts, w, color, outward, opts) {
   </g>`;
 }
 
-function batteryGlow(p, soc, animations) {
+function batteryGlow(p, soc, animations, HOUSE) {
   if (!p.charge && !p.discharge) return "";
   const [x, y, w, h] = HOUSE.batIcon;
   const lit = Number.isFinite(soc) ? Math.max(1, Math.ceil(soc / 33.4)) : 3;
@@ -217,6 +219,7 @@ export function renderHouse(live, opts) {
   const { t, lang } = opts;
   const p = flowParts(live, opts.threshold);
   const soc = Number.isFinite(live.soc) ? Math.max(0, Math.min(100, live.soc)) : null;
+  const HOUSE = opts.sky?.night ? HOUSES.night : HOUSES.day;
   const L = HOUSE.legs;
   const exporting = p.export > 0 && p.export >= p.import;
   const legs = [
@@ -250,7 +253,7 @@ export function renderHouse(live, opts) {
           <filter id="eoc-hglow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter>
           <filter id="eoc-hsoft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         </defs>
-        ${legs}${batteryGlow(p, soc, opts.animations)}
+        ${legs}${batteryGlow(p, soc, opts.animations, HOUSE)}
       </svg>
       ${chip("solar", t("solar"), fmtPower(live.solar, lang), "", C.pv)}
       ${chip("house", t("house"), fmtPower(live.house, lang), "", p.houseColor)}

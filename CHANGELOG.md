@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 (2026-11-18)
+
+- House scene (`flow_style: house`): a new house, a white two-storey house with two balconies, PV on the roof, the meter
+  box and the battery on its side wall and the grid pole beside it, in a day and a night render. The lines run from the
+  roof modules, the pole, the battery and the lower balcony to the meter box; the night render has its own positions.
+
 ## 0.4.0 (2026-11-18)
 
 - **Illustrated header** on the main card, the mini card and the dialog, in the style of juju35's cards: a 90 px banner
