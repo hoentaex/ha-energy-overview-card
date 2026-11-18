@@ -8,7 +8,7 @@
  * Layout and look follow the cards of juju35 (https://github.com/juju35). MIT licence.
  */
 import { BALANCE_STYLE, patchBalance, renderBalance } from "./balancecard.js";
-import { powerReadout } from "./charts.js";
+import { bindMore, MORE_STYLE, moreIds } from "./more.js";
 import {
   Cache,
   fetchForecast,
@@ -35,6 +35,7 @@ import {
   defaultSel,
   historyReadout,
   historyUnits,
+  powerReadoutHTML,
   powerTitle,
   RENDERERS,
   STATUS_COLOR,
@@ -47,7 +48,7 @@ import { daySun } from "./sun.js";
 import { tzOf } from "./tz.js";
 
 const VERSION = __VERSION__;
-const STYLE = BASE_STYLE + BANNER_STYLE;
+const STYLE = BASE_STYLE + BANNER_STYLE + MORE_STYLE;
 const TICK = 60e3;
 
 // Config keys holding entity ids: their states decide when the live part re-renders.
@@ -222,6 +223,7 @@ export class EnergyOverviewCard extends HTMLElement {
       showForecast: !!forecast && this._state.mode === "solar",
       sun: range.kind === "day" ? daySun(hass, range) : null,
       state: this._state,
+      more: moreIds(config, this._live, this._prefs),
     };
     if (power?.series.soc && range.kind === "day") {
       ctx.hourSoc = range.slots.map((slot) => {
@@ -253,8 +255,15 @@ export class EnergyOverviewCard extends HTMLElement {
       .map((s) => `<div class="sec" data-sec="${s}">${RENDERERS[s](ctx)}</div>`)
       .join("");
     const focus = this._focusKey();
+    // Sky and house image stay the same elements across a full render, so they never reload (the card would shrink
+    // for a moment and the page could scroll).
+    const kept = new Map([...this.shadowRoot.querySelectorAll("[data-keep]")].map((n) => [n.dataset.keep, n]));
     this.shadowRoot.innerHTML = `<style>${STYLE}.sec{display:contents}</style><ha-card>${body}</ha-card>`;
-    if (focus) this.shadowRoot.querySelector(focus)?.focus();
+    for (const n of this.shadowRoot.querySelectorAll("[data-keep]")) {
+      const old = kept.get(n.dataset.keep);
+      if (old) n.replaceWith(old);
+    }
+    if (focus) this.shadowRoot.querySelector(focus)?.focus({ preventScroll: true });
     this._liveSig = this._liveSignature();
     this._bind();
     animateSky(this.shadowRoot);
@@ -279,6 +288,21 @@ export class EnergyOverviewCard extends HTMLElement {
     if (el.dataset.col !== undefined) return `[data-col="${el.dataset.col}"]`;
     if (el.dataset.act) return `[data-act="${el.dataset.act}"]${el.dataset.v ? `[data-v="${el.dataset.v}"]` : ""}`;
     return null;
+  }
+
+  /**
+   * Re-renders only the given sections (a line toggled in the chart, another history view), so the rest of the card
+   * and the page's scroll position stay as they are; keyboard focus moves to the same control without scrolling.
+   */
+  _renderSections(names) {
+    if (!this.shadowRoot.firstChild) return this._render();
+    const ctx = (this._ctx = this._context());
+    const focus = this._focusKey();
+    for (const s of names) {
+      const el = this.shadowRoot.querySelector(`[data-sec="${s}"]`);
+      if (el) el.innerHTML = RENDERERS[s](ctx);
+    }
+    if (focus) this.shadowRoot.querySelector(focus)?.focus({ preventScroll: true });
   }
 
   _liveSignature() {
@@ -312,7 +336,7 @@ export class EnergyOverviewCard extends HTMLElement {
     }
     animateSky(this.shadowRoot);
     this._fitBanner();
-    if (focus === "[data-close]") this.shadowRoot.querySelector(focus)?.focus();
+    if (focus === "[data-close]") this.shadowRoot.querySelector(focus)?.focus({ preventScroll: true });
     this._liveSig = this._liveSignature();
   }
 
@@ -322,6 +346,7 @@ export class EnergyOverviewCard extends HTMLElement {
     if (this._bound) return;
     this._bound = true;
     const root = this.shadowRoot;
+    bindMore(root, this);
     root.addEventListener("click", (e) => this._onClick(e));
     root.addEventListener("pointerover", (e) => this._pickCol(e));
     root.addEventListener("focusin", (e) => this._pickCol(e));
@@ -364,12 +389,12 @@ export class EnergyOverviewCard extends HTMLElement {
         break;
       case "mode":
         s.mode = v;
-        this._render();
+        this._renderSections(["history"]);
         return;
       case "chip":
         if (s.hidden.has(v)) s.hidden.delete(v);
         else s.hidden.add(v);
-        this._render();
+        this._renderSections(["power"]);
         return;
       default:
         return;
@@ -416,8 +441,8 @@ export class EnergyOverviewCard extends HTMLElement {
     const ro = this.shadowRoot.querySelector("[data-pro]");
     const line = this.shadowRoot.querySelector("[data-cross]");
     if (!ro) return;
-    const [l1, l2] = powerReadout(ctx.power.series, i, ctx);
-    ro.innerHTML = `<div class="r-title">${esc(powerTitle(ctx, i))}</div><div class="r-line">${esc(l1)}</div><div class="r-line">${esc(l2)}</div>`;
+    const [l1, l2] = powerReadoutHTML(ctx.power.series, i, ctx);
+    ro.innerHTML = `<div class="r-title">${esc(powerTitle(ctx, i))}</div><div class="r-line">${l1}</div><div class="r-line">${l2}</div>`;
     if (line) {
       const x = ((i / Math.max(1, ctx.power.cells.length - 1)) * 300).toFixed(1);
       line.setAttribute("x1", x);

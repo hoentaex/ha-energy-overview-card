@@ -1,12 +1,13 @@
 // Section renderers of the main card. Each takes the render context built by the card and returns HTML.
-import { POWER_SERIES, powerReadout, renderHistory, renderPowerChart, ring } from "./charts.js";
+import { POWER_SERIES, renderHistory, renderPowerChart, ring } from "./charts.js";
 import { renderFlow } from "./flow.js";
 import { skyState, STYLE_RENDERERS } from "./flowstyles.js";
 import { periodLabel } from "./period.js";
-import { esc, fmtDay, fmtEnergy, fmtNum, fmtTime, fmtWeekday } from "./shared.js";
+import { esc, fmtDay, fmtEnergy, fmtNum, fmtPower, fmtTime, fmtWeekday } from "./shared.js";
 import { nightBlocks } from "./sun.js";
 import { svgIcon } from "./icons.js";
 import { renderBanner } from "./banner.js";
+import { moreAttrs, moreSpan } from "./more.js";
 
 export const STATUS_COLOR = {
   grid_house: "var(--eoc-imp)",
@@ -61,6 +62,7 @@ export function flow(ctx) {
     byPower: config.animate_by_power !== false,
     time: `${fmtWeekday(now, lang, tz)} ${fmtTime(now, lang, tz)}`,
     forecastToday: ctx.forecastToday,
+    more: ctx.more || {},
   };
   const style = STYLE_RENDERERS[config.flow_style];
   if (!style) return renderFlow(ctx.live, opts);
@@ -99,6 +101,27 @@ export function powerTitle(ctx, i) {
   return i === power.last && ctx.isCurrentPeriod && !ctx.scrubbing ? `${time} · ${t("latest")}` : time;
 }
 
+/**
+ * The two value lines over the power chart, each value opening its entity's dialog: "consumption · PV · battery %"
+ * and "grid import · export" (as powerReadout, with links).
+ */
+export function powerReadoutHTML(series, i, { t, lang, more = {} }) {
+  const w = (key) => esc(fmtPower(series[key]?.[i], lang));
+  const soc = series.soc?.[i];
+  const part = (id, label, val) => moreSpan(id, `${esc(label)} ${val}`);
+  return [
+    [
+      part(more.house, t("consumption"), w("house")),
+      part(more.solar, t("pv"), w("pv")),
+      part(more.soc, t("battery"), Number.isFinite(soc) ? `${esc(fmtNum(soc, lang, 0))} %` : "–"),
+    ].join(" · "),
+    [
+      part(more.grid_import, t("grid_import"), w("grid_import")),
+      part(more.grid_export, t("grid_export"), w("grid_export")),
+    ].join(" · "),
+  ];
+}
+
 export function power(ctx) {
   const { t, lang, power: p, state } = ctx;
   if (ctx.kind !== "day" || !p || !Object.keys(p.series).length) return "";
@@ -108,7 +131,7 @@ export function power(ctx) {
     { t, lang, hidden: state.hidden, ariaRange: ctx.isCurrentPeriod ? t("today") : periodLabel(ctx.range, lang) },
   );
   const i = p.last;
-  const [l1, l2] = i >= 0 ? powerReadout(p.series, i, { t, lang }) : ["–", "–"];
+  const [l1, l2] = i >= 0 ? powerReadoutHTML(p.series, i, { t, lang, more: ctx.more }) : ["–", "–"];
   const chips = POWER_SERIES.filter((s) => p.series[s.key])
     .map(
       (s) =>
@@ -118,7 +141,7 @@ export function power(ctx) {
   return `<div class="tile">
     <div class="tile-head"><div class="tile-title">${svgIcon("chart")}<span>${esc(t("power_title"))}</span></div><div class="muted small">${esc(ctx.isCurrentPeriod ? t("today") : periodLabel(ctx.range, lang))} · kW</div></div>
     <div class="readout three" aria-live="polite" data-pro>
-      <div class="r-title">${esc(powerTitle(ctx, i))}</div><div class="r-line">${esc(l1)}</div><div class="r-line">${esc(l2)}</div>
+      <div class="r-title">${esc(powerTitle(ctx, i))}</div><div class="r-line">${l1}</div><div class="r-line">${l2}</div>
     </div>
     ${chart.html}
     <div class="xaxis p"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>
@@ -310,19 +333,20 @@ export function footer(ctx) {
     Number.isFinite(s.grid_import) && s.grid_import > 0
       ? s.grid_import
       : (s.house_from_grid || 0) + (s.grid_to_battery || 0);
-  const tile = (k, v) =>
-    `<div class="tile"><div class="k">${esc(k)}</div><div class="v">${fmtNum(v, lang, 2)} <span>kWh</span></div></div>`;
+  const more = ctx.more || {};
+  const tile = (k, v, id) =>
+    `<div class="tile"${moreAttrs(id)}><div class="k">${esc(k)}</div><div class="v">${fmtNum(v, lang, 2)} <span>kWh</span></div></div>`;
   let fc = "";
   if (ctx.kind === "day" && ctx.isCurrentPeriod && Number.isFinite(ctx.forecastToday) && ctx.forecastToday > 0) {
     const ratio = (s.solar || 0) / ctx.forecastToday;
     fc = `<div class="fc"><span>${esc(t("pv_vs_forecast"))}</span>
       <div class="bar"><div style="width:${Math.min(100, ratio * 100).toFixed(1)}%"></div></div>
-      <b>${fmtNum(s.solar, lang, 2)} / ${fmtEnergy(ctx.forecastToday, lang)} · ${Math.round(ratio * 100)} %</b></div>`;
+      <b>${moreSpan(more.e_solar, fmtNum(s.solar, lang, 2))} / ${moreSpan(more.forecast, fmtEnergy(ctx.forecastToday, lang))} · ${Math.round(ratio * 100)} %</b></div>`;
   }
   return `<div class="foot">
-    ${tile(t("grid_import"), imp)}
-    ${tile(t("grid_export"), s.grid_export)}
-    ${tile(t("battery_charged"), s.battery_charge)}
+    ${tile(t("grid_import"), imp, more.e_grid_import)}
+    ${tile(t("grid_export"), s.grid_export, more.e_grid_export)}
+    ${tile(t("battery_charged"), s.battery_charge, more.e_battery_charge)}
   </div>${fc}`;
 }
 

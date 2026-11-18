@@ -3,6 +3,7 @@
 // setFlowAssets() so that this module stays importable without a bundler (tests).
 import { liveFlows } from "./flow.js";
 import { svgIcon } from "./icons.js";
+import { moreAttrs } from "./more.js";
 import { esc, fmtNum, fmtPower } from "./shared.js";
 
 let ASSETS = { house: {}, sky: {} };
@@ -117,7 +118,7 @@ const houseGeometry = (shift) => ({
       [930 + shift, 606],
     ],
     house: [
-      [720, 646],
+      [640, 646],
       [893 + shift, 646],
     ],
     battery: [
@@ -228,9 +229,16 @@ export function renderHouse(live, opts) {
     leg(L.battery, p.charge || p.discharge, p.discharge ? C.bat : C.gc, !!p.discharge && !p.charge, opts),
     leg(L.grid, exporting ? p.export : p.import, exporting ? C.exp : C.imp, !exporting, opts),
   ].join("");
+  const more = opts.more || {};
+  const ids = {
+    solar: more.solar,
+    house: more.house,
+    battery: more.battery,
+    grid: exporting ? more.grid_export : more.grid_import,
+  };
   const chip = (k, title, val, sub, color) => {
     const [x, y, al] = HOUSE.chips[k];
-    return `<div class="h-chip ${al}" style="left:${((x / 1536) * 100).toFixed(2)}%;top:${((y / 1024) * 100).toFixed(2)}%;--c:${color}">
+    return `<div class="h-chip ${al}" style="left:${((x / 1536) * 100).toFixed(2)}%;top:${((y / 1024) * 100).toFixed(2)}%;--c:${color}"${moreAttrs(ids[k])}>
       <i></i><div><small>${esc(title)}</small><b>${esc(val)}</b>${sub ? `<small>${esc(sub)}</small>` : ""}</div></div>`;
   };
   const batW = p.charge || p.discharge;
@@ -250,8 +258,10 @@ export function renderHouse(live, opts) {
       ${img ? `<img data-keep="house:${opts.sky?.night ? "n" : "d"}" src="${img}" alt="" width="1536" height="1024">` : ""}
       <svg viewBox="0 0 1536 1024" aria-hidden="true">
         <defs>
-          <filter id="eoc-hglow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter>
-          <filter id="eoc-hsoft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <!-- Filter regions in scene units, not relative to each path: a straight leg has a zero-height (or zero-width)
+               box, and a relative region would then clip its glow and line away. -->
+          <filter id="eoc-hglow" filterUnits="userSpaceOnUse" x="-60" y="-60" width="1656" height="1144"><feGaussianBlur stdDeviation="9"/></filter>
+          <filter id="eoc-hsoft" filterUnits="userSpaceOnUse" x="-60" y="-60" width="1656" height="1144"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         </defs>
         ${legs}${batteryGlow(p, soc, opts.animations, HOUSE)}
       </svg>

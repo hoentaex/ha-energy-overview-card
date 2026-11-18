@@ -242,6 +242,11 @@ Tag, Sonnenuntergang (−4° bis 8°) und Nacht. Regen und Schnee fallen leicht 
 Jede Säule ist ein Button: Hover, Fokus oder Antippen zeigt die Werte in der Zeile darüber. In der Wochenansicht
 stehen die Werte über (und beim Akku die Entladung unter) den Säulen; im Monat sind künftige Tage blasse Platzhalter.
 
+Werte mit eigener Entität sind anklickbar und öffnen den normalen Home-Assistant-Dialog dieser Entität (Verlauf,
+Einstellungen): die Live-Werte im Energiefluss, die Werte über dem Leistungsdiagramm, Netzbezug, Einspeisung und
+Akku geladen in der Fußzeile sowie PV und Prognose darunter. Ein berechneter Wert ohne Entität (etwa der
+Verbrauch ohne `house_power_entity`) bleibt normaler Text.
+
 ### Mini-Karte
 
 `custom:energy-overview-mini-card` zeigt eine Zeile: Ladestand-Ring, Name, Status, PV- und Netzleistung und die
@@ -298,6 +303,10 @@ A Lovelace card for a **PV system with a home battery**: live energy flow, balan
 export), self-sufficiency, self-consumption and CO₂ saved; the day's power chart with a crosshair; and a history of
 consumption (with night blocks), solar (with today's forecast) and battery (charge up, discharge down, state-of-charge
 line). **Not included:** control logic, costs and tariffs.
+
+Values backed by an entity open Home Assistant's own dialog of that entity: the live values of the flow, the values over
+the power chart, and grid import, export, battery charged and PV / forecast in the footer. A computed value without an
+entity (consumption without `house_power_entity`) stays plain text.
 
 **Illustrated header:** a banner with one of three pictures (`illustration_scene`): `sun` (the day arc with the sun at
 its real position, PV power now and today's yield vs. the forecast; default), `balcony` (two panels on a balcony

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.3 (2026-11-18)
+
+- Values open Home Assistant's own dialog of their entity (history, settings): the live values in the flow and the
+  house scene, each value over the power chart (consumption, PV, battery %, grid import, export), the footer tiles
+  (grid import, export, battery charged, from their statistics) and PV / forecast under them. A value without an
+  entity (for example consumption when it is computed) stays plain text.
+- A click on a line chip of the power chart or on a history view no longer rebuilds the whole card, only that section:
+  the page keeps its scroll position (it could jump up), and the house image and the sky are never reloaded.
+- House scene: the line from the meter box into the house glows again like the others. It is a straight line in the new
+  house, and the glow filters measured their area from the line's own box, which has no height, so only the thin core
+  and the arrows were left. The filters now cover the whole scene; the line also reaches further into the balcony.
+
 ## 0.4.2 (2026-11-18)
 
 - Illustrated header: the ground strip is orange while the grid supplies the home, the card's own import colour (it was

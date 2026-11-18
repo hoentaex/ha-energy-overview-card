@@ -1,5 +1,6 @@
 // Live energy flow: four nodes (solar top, grid left, home right, battery bottom) on one ellipse through all
 // four centres. The four outer links are arcs of that ellipse, broken at each node; two straight links cross it.
+import { moreAttrs } from "./more.js";
 import { esc, fmtEnergy, fmtNum, fmtPower } from "./shared.js";
 
 // Stage 388 × 324; ellipse centre (192, 149), rx 154, ry 75.
@@ -92,8 +93,15 @@ export function renderFlow(live, opts) {
     house: pos(live.house) > threshold,
     battery: active.solar_battery || active.battery_house || active.grid_battery,
   };
+  const more = opts.more || {};
+  const ids = {
+    solar: more.solar,
+    grid: exporting ? more.grid_export : more.grid_import,
+    house: more.house,
+    battery: more.battery,
+  };
   const node = (k, color, val) =>
-    `<div class="node${on[k] ? " on" : ""}" style="${at(NODES[k])};--c:${color}">${icon(k)}<b>${esc(val)}</b></div>`;
+    `<div class="node${on[k] ? " on" : ""}" style="${at(NODES[k])};--c:${color}"${moreAttrs(ids[k])}>${icon(k)}<b>${esc(val)}</b></div>`;
   const soc = Number.isFinite(live.soc) ? Math.max(0, Math.min(100, live.soc)) : null;
   const cap = live.capacity_kwh;
   const gridSub = exporting ? t("export") : t("import");
