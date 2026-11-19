@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.4 (2026-11-18)
+
+- The card keeps its height while another period (day, week, month, back, forward, now) loads. Its sections were empty
+  for a moment, the card shrank to about half and the dashboard scrolled up.
+- `house_info_entity`: a sensor that a click on the consumption opens, while the consumption itself stays calculated
+  (for a meter that also counts the battery charging from the grid). In the visual editor too.
+
 ## 0.4.3 (2026-11-18)
 
 - Values open Home Assistant's own dialog of their entity (history, settings): the live values in the flow and the

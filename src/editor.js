@@ -20,6 +20,7 @@ const LABELS = {
     battery_power_entity: "Akkuleistung (+ laden / − entladen)",
     invert_battery: "Vorzeichen der Akkuleistung umdrehen",
     house_power_entity: "Hausverbrauch (leer: berechnet)",
+    house_info_entity: "Hausverbrauch nur für den Dialog beim Klick",
     soc_entity: "Ladestand (%)",
     capacity_entity: "Akkukapazität (Entity, kWh)",
     capacity_kwh: "Akkukapazität (fester Wert)",
@@ -94,6 +95,7 @@ const LABELS = {
     battery_power_entity: "Battery power (+ charging / − discharging)",
     invert_battery: "Invert the battery power sign",
     house_power_entity: "Home consumption (empty: calculated)",
+    house_info_entity: "Home consumption only for the dialog on click",
     soc_entity: "State of charge (%)",
     capacity_entity: "Battery capacity (entity, kWh)",
     capacity_kwh: "Battery capacity (fixed value)",
@@ -198,6 +200,7 @@ export const editorSchema = (lang, { mini = false, banner = true } = {}) => {
         ent("battery_power_entity"),
         bool("invert_battery"),
         ent("house_power_entity"),
+        ent("house_info_entity"),
         ent("soc_entity", ["sensor", "input_number", "number"]),
         {
           type: "grid",

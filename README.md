@@ -141,6 +141,7 @@ forecast_today_entity: sensor.energy_production_today
 | `battery_power_entity` | Akkuleistung, + laden / − entladen | Energie-Dashboard (dort + entladen, wird umgedreht) |
 | `invert_battery` | Vorzeichen der Akkuleistung umdrehen | `false` |
 | `house_power_entity` | Hausverbrauch | berechnet |
+| `house_info_entity` | Sensor, den ein Klick auf den Verbrauch öffnet; gerechnet wird weiter ohne ihn (z. B. ein Zähler, der die Netzladung des Akkus mitzählt) | – |
 | `soc_entity` | Ladestand in % | – |
 | `capacity_entity` / `capacity_kwh` | Akkukapazität in kWh | – |
 
@@ -245,7 +246,7 @@ stehen die Werte über (und beim Akku die Entladung unter) den Säulen; im Monat
 Werte mit eigener Entität sind anklickbar und öffnen den normalen Home-Assistant-Dialog dieser Entität (Verlauf,
 Einstellungen): die Live-Werte im Energiefluss, die Werte über dem Leistungsdiagramm, Netzbezug, Einspeisung und
 Akku geladen in der Fußzeile sowie PV und Prognose darunter. Ein berechneter Wert ohne Entität (etwa der
-Verbrauch ohne `house_power_entity`) bleibt normaler Text.
+Verbrauch ohne `house_power_entity`) bleibt normaler Text, außer `house_info_entity` nennt einen Sensor für den Dialog.
 
 ### Mini-Karte
 
@@ -306,7 +307,8 @@ line). **Not included:** control logic, costs and tariffs.
 
 Values backed by an entity open Home Assistant's own dialog of that entity: the live values of the flow, the values over
 the power chart, and grid import, export, battery charged and PV / forecast in the footer. A computed value without an
-entity (consumption without `house_power_entity`) stays plain text.
+entity (consumption without `house_power_entity`) stays plain text, unless `house_info_entity` names a sensor for the
+dialog (it is not used in the calculation).
 
 **Illustrated header:** a banner with one of three pictures (`illustration_scene`): `sun` (the day arc with the sun at
 its real position, PV power now and today's yield vs. the forecast; default), `balcony` (two panels on a balcony

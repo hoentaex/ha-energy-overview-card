@@ -21,7 +21,9 @@ export function moreIds(config, live = {}, prefs = null) {
     grid_export: split ? config.grid_export_power_entity : c.grid_power_entity,
     battery: c.battery_power_entity,
     soc: c.soc_entity,
-    house: c.house_power_entity,
+    // A sensor only for the dialog: the home consumption stays calculated (a meter that also counts the battery
+    // charging from the grid would break the balance), yet a click on it shows that sensor.
+    house: c.house_power_entity || config.house_info_entity,
     forecast: config.forecast_today_entity,
     e_solar: first("solar"),
     e_grid_import: first("grid_import"),

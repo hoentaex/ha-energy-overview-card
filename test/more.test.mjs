@@ -68,3 +68,8 @@ test("the readout over the power chart links each value to its entity", async ()
   assert.match(l2, /data-more="sensor\.imp"[^>]*>Netzbezug 0 W</);
   assert.match(l2, / · Einspeisung 0 W$/);
 });
+
+test("house_info_entity only names the consumption's dialog", () => {
+  assert.equal(moreIds({ house_info_entity: "sensor.meter" }).house, "sensor.meter");
+  assert.equal(moreIds({ house_power_entity: "sensor.home", house_info_entity: "sensor.meter" }).house, "sensor.home");
+});

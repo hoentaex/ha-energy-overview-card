@@ -160,8 +160,12 @@ export class EnergyOverviewCard extends HTMLElement {
       const sig = JSON.stringify([range.start, energy?.series, power?.series, forecast]);
       const changed = sig !== this._data.sig;
       this._data = { sig, range, energy: energy || { hasData: false, split: [], total: {} }, power, forecast };
-      if (changed) this._render();
+      const held = !!this._heldHeight;
+      this._heldHeight = 0;
+      if (changed || held) this._render();
     } catch (err) {
+      this._heldHeight = 0;
+      this._applyHeldHeight();
       console.warn("energy-overview-card:", err);
     }
   }
@@ -264,6 +268,7 @@ export class EnergyOverviewCard extends HTMLElement {
       if (old) n.replaceWith(old);
     }
     if (focus) this.shadowRoot.querySelector(focus)?.focus({ preventScroll: true });
+    this._applyHeldHeight();
     this._liveSig = this._liveSignature();
     this._bind();
     animateSky(this.shadowRoot);
@@ -400,8 +405,22 @@ export class EnergyOverviewCard extends HTMLElement {
         return;
     }
     s.sel = null;
+    // Keep the card's height while the new period loads: in between, its sections are empty, the card would shrink
+    // for a moment and the dashboard would scroll up.
+    this._holdHeight();
     this._render();
     this._load();
+  }
+
+  _holdHeight() {
+    const card = this.shadowRoot.querySelector("ha-card");
+    if (card) this._heldHeight = Math.max(this._heldHeight || 0, card.offsetHeight);
+  }
+
+  /** Applied after each render while a period loads; released once its data is drawn (see _load). */
+  _applyHeldHeight() {
+    const card = this.shadowRoot.querySelector("ha-card");
+    if (card) card.style.minHeight = this._heldHeight ? `${this._heldHeight}px` : "";
   }
 
   _pickCol(e) {
