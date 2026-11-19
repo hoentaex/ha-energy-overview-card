@@ -250,7 +250,7 @@ export function sceneSVG(d) {
 }
 
 /**
- * The banner: badge, title with the status pill, subtitle, the scene and the ground strip. `button` is the open
+ * The banner: badge, title, the status pill on its own line under it, subtitle, the scene and the ground strip. `button` is the open
  * (mini card) or close (dialog) button, drawn as a frosted round button top right.
  */
 export function bannerHTML({ night, logo, color, name, sub, pill, ground, scene, button }) {
@@ -259,7 +259,8 @@ export function bannerHTML({ night, logo, color, name, sub, pill, ground, scene,
     <div class="head">
       <div class="logo" style="--c:${color}">${logo}</div>
       <div class="titles">
-        <div class="trow"><div class="name" title="${esc(name)}">${esc(name)}</div>${pill}</div>
+        <div class="name" title="${esc(name)}">${esc(name)}</div>
+        ${pill}
         ${sub ? `<div class="sub" title="${esc(sub)}">${esc(sub)}</div>` : ""}
       </div>
     </div>
@@ -269,19 +270,16 @@ export function bannerHTML({ night, logo, color, name, sub, pill, ground, scene,
 }
 
 /**
- * The status pill in the banner: right after the title when the title and the whole pill fit on that row, else on its
- * own line under the subtitle; when even that runs into the ground strip, its dot alone. Measured after each render.
+ * The status pill always sits on the second line, under the title, so it never jumps between the title row and a line
+ * of its own with the length of the title or the status text. A text wider than the column ends in an ellipsis; in a
+ * column too narrow for a few letters the dot alone. Measured after each render.
  */
 export function fitPill(root) {
   for (const t of root?.querySelectorAll?.(".banner .titles") || []) {
-    t.classList.remove("below", "dotonly");
-    const name = t.querySelector(".name");
+    t.classList.remove("dotonly");
     const pill = t.querySelector(".pill");
-    if (!name || !pill || !t.clientWidth) continue;
-    if (name.scrollWidth + 8 + pill.scrollWidth <= t.clientWidth + 0.5) continue;
-    t.classList.add("below");
-    const floor = t.closest(".banner").getBoundingClientRect().bottom - 10 + 0.5;
-    if (pill.getBoundingClientRect().bottom > floor) t.classList.add("dotonly");
+    if (!pill || !t.clientWidth) continue;
+    if (t.clientWidth < 80) t.classList.add("dotonly");
   }
 }
 
@@ -313,14 +311,11 @@ ha-card > .sec > .banner, ha-card > .banner { margin: -16px -16px 0; }
 .banner .logo .icon { width: 24px; height: 24px; }
 .banner.night .logo { background: rgba(255,255,255,.12); box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); color: color-mix(in srgb, var(--c) 75%, #fff); }
 .banner .titles { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: center; align-self: stretch; }
-.banner .trow { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.banner .name { flex: 0 1 auto; min-width: 0; font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.banner .name { flex: none; min-width: 0; font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .banner .sub { font-size: 13px; color: var(--sky-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.banner .pill { flex: none; align-self: center; margin: 0; max-width: 100%; padding: 1px 8px; font-size: 11px; line-height: 16px; gap: 4px;
+.banner .pill { flex: none; align-self: flex-start; margin: 3px 0 2px; max-width: 100%; padding: 1px 8px; font-size: 11px; line-height: 16px; gap: 4px;
                 background: color-mix(in srgb, var(--c) 18%, rgba(255,255,255,.78)); color: color-mix(in srgb, var(--c) 45%, #0d2a45); }
 .banner.night .pill { background: color-mix(in srgb, var(--c) 30%, rgba(8,18,38,.55)); color: color-mix(in srgb, var(--c) 35%, #fff); }
-.banner .titles.below .trow { display: contents; }
-.banner .titles.below .pill { order: 9; align-self: flex-start; margin-top: 3px; }
 .banner .titles.dotonly .pill { padding: 4px; } .banner .titles.dotonly .pill > span:last-child { display: none; }
 .banner .zoom { position: absolute; z-index: 2; top: 5px; right: 5px; margin: 0; width: 24px; height: 24px; border-radius: 50%; color: #33506b;
                 background: rgba(255,255,255,.55); box-shadow: inset 0 0 0 1px rgba(255,255,255,.7); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }

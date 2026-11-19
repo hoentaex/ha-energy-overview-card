@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1 (2026-11-19)
+
+- Illustrated header: the status pill always sits on the second line, under the title and above the subtitle. It used to
+  follow the title and move to a line of its own when they did not fit together, so with a long title it jumped
+  between the two places as the status text changed. A long title or status now ends in an ellipsis; only a very narrow
+  card shows the dot alone.
+
 ## 0.5.0 (2026-11-19)
 
 - House scene: two houses to choose from with `house_model`: `balcony`, the house with balconies (default, as in
