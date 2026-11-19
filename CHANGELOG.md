@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 (2026-11-19)
+
+- House scene: two houses to choose from with `house_model`: `balcony`, the house with balconies (default, as in
+  0.4.1–0.4.4), or `classic`, the compact family house of the earlier versions, back with its own lines and chips, day
+  and night. In the visual editor next to the weather entity. The card grows to about 780 KB.
+
 ## 0.4.4 (2026-11-18)
 
 - The card keeps its height while another period (day, week, month, back, forward, now) loads. Its sections were empty

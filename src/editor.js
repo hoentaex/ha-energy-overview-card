@@ -1,6 +1,6 @@
 // Visual editor (ha-form) for both cards, and the config of new cards (getStubConfig) from the Energy dashboard.
 import { prefsLive } from "./energy.js";
-import { FLOW_STYLES } from "./flowstyles.js";
+import { FLOW_STYLES, HOUSE_MODELS } from "./flowstyles.js";
 import { DEFAULTS, HISTORY_MODES, langOf, SECTIONS } from "./shared.js";
 
 const LABELS = {
@@ -53,6 +53,9 @@ const LABELS = {
     weather_entity: "Wetter (für den Himmel)",
     fs_ellipse: "Ellipse",
     fs_house: "Haus-Szene",
+    house_model: "Haus in der Haus-Szene",
+    hm_balcony: "Haus mit Balkonen",
+    hm_classic: "Einfamilienhaus",
     fs_sankey: "Energiebänder",
     fs_ring: "Haus-Ring",
     bg_none: "Kartenhintergrund",
@@ -128,6 +131,9 @@ const LABELS = {
     weather_entity: "Weather (for the sky)",
     fs_ellipse: "Ellipse",
     fs_house: "House scene",
+    house_model: "House in the house scene",
+    hm_balcony: "House with balconies",
+    hm_classic: "Family house",
     fs_sankey: "Energy bands",
     fs_ring: "Home ring",
     bg_none: "Card background",
@@ -245,7 +251,17 @@ export const editorSchema = (lang, { mini = false, banner = true } = {}) => {
             ]),
           ],
         },
-        ent("weather_entity", ["weather"]),
+        {
+          type: "grid",
+          name: "",
+          schema: [
+            ent("weather_entity", ["weather"]),
+            select(
+              "house_model",
+              HOUSE_MODELS.map((v) => ({ value: v, label: L[`hm_${v}`] })),
+            ),
+          ],
+        },
         {
           name: "sections",
           selector: {

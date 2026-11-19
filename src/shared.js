@@ -18,6 +18,7 @@ export const DEFAULTS = {
   popup: false,
   flow_style: "ellipse",
   flow_background: "none",
+  house_model: "balcony",
   illustration: true,
   illustration_theme: "",
   illustration_scene: "sun",

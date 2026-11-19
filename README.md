@@ -169,6 +169,7 @@ die addiert wird:
 | `flow_style` | Live-Fluss: `ellipse`, `house` (Haus-Szene), `sankey` (Energiebänder), `ring` (Haus-Ring) | `ellipse` |
 | `flow_background` | Hintergrund von Bändern und Ring: `none` oder `weather` (Wetterhimmel) | `none` |
 | `weather_entity` | `weather.*`-Entity für den Himmel | – (klarer Himmel) |
+| `house_model` | Haus der Haus-Szene: `balcony` (Haus mit Balkonen) oder `classic` (Einfamilienhaus) | `balcony` |
 | `threshold_w` | ab wie viel Watt ein Fluss als aktiv gilt (Linien, Status) | `10` |
 | `co2_factor` | kg CO₂ je kWh | `0.4` |
 | `animations` | Flussanimation (respektiert `prefers-reduced-motion`) | `true` |
@@ -218,7 +219,8 @@ grau wenn nichts fließt.
   mit runden Ecken; aktive Leitungen leuchten in der Farbe ihres Flusses, mit Lichtimpuls und Pfeilen in Flussrichtung.
   Die Leitung ins Haus nimmt die Farbe der Quelle an, die das Haus gerade am meisten versorgt. Das Batteriesymbol am
   Akku pulsiert blau beim Laden und grün beim Entladen, die Balken zeigen den Ladestand. Ab der Dämmerung erscheint
-  das Haus mit beleuchteten Fenstern.
+  das Haus mit beleuchteten Fenstern. Zwei Häuser zur Wahl (`house_model`): `balcony`, das Haus mit Balkonen
+  (Standard), und `classic`, das kompakte Einfamilienhaus.
 - **`sankey`**: links woher (Solar, Akku, Netz), rechts wohin (Haus, Akku laden, Einspeisung); die Bandbreite
   entspricht der Leistung, beide Seiten sind gleich hoch.
 - **`ring`**: großer Ring mit dem Hausverbrauch, Segmente nach Quelle (Solar, Akku, Netz), innen der Ladestand, dazu
@@ -231,7 +233,7 @@ Tag, Sonnenuntergang (−4° bis 8°) und Nacht. Regen und Schnee fallen leicht 
 
 > [!NOTE]
 > Haus- und Himmelsbilder sind in die JS-Datei eingebettet (der Marketplace installiert nur diese eine Datei).
-> Die Karte ist dadurch rund 500 KB groß.
+> Die Karte ist dadurch rund 780 KB groß.
 
 ### Verlauf
 
@@ -318,11 +320,12 @@ classic header; `illustration_theme: day | night` forces the picture, else it fo
 
 **Flow styles:** `flow_style` picks the live flow: `ellipse` (default), `house` (a 3D house on a weather sky; all lines
 run through the meter box, horizontal and vertical with round corners, glowing in the colour of their flow with arrows;
-the battery symbol pulses blue while charging and green while discharging; lit windows from dusk), `sankey` (energy
+the battery symbol pulses blue while charging and green while discharging; lit windows from dusk; `house_model` picks
+`balcony`, the house with balconies (default), or `classic`, the compact family house), `sankey` (energy
 bands from the sources to the consumers) or `ring` (home consumption by source with the state of charge inside).
 The house scene always stands on the sky; bands and ring take it with `flow_background: weather`. The sky follows
 `weather_entity` (clear, cloudy, rain, snow, fog) and the sun's elevation from `sun.sun` (day, sunset, night), with
-light rain, snow and twinkling stars. The images are embedded in the JS file, which makes it about 500 KB.
+light rain, snow and twinkling stars. The images are embedded in the JS file, which makes it about 780 KB.
 
 **Home consumption:** only set `house_power_entity` / `consumption_stat` when the sensor measures the home alone.
 Sensors built as grid import + PV often count battery charging from the grid as home consumption; then the flow does

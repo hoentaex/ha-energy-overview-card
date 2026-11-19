@@ -63,6 +63,7 @@ export function flow(ctx) {
     time: `${fmtWeekday(now, lang, tz)} ${fmtTime(now, lang, tz)}`,
     forecastToday: ctx.forecastToday,
     more: ctx.more || {},
+    house: config.house_model,
   };
   const style = STYLE_RENDERERS[config.flow_style];
   if (!style) return renderFlow(ctx.live, opts);

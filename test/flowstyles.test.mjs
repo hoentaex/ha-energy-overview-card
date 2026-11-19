@@ -85,7 +85,7 @@ test("flow parts: threshold and the source that feeds the home most", () => {
 });
 
 test("house scene: battery leg and symbol blue while charging, green while discharging", () => {
-  setFlowAssets({ house: { day: "d.webp", night: "n.webp" }, sky: { "day-clear": "s.webp" } });
+  setFlowAssets({ house: { balcony: { day: "d.webp", night: "n.webp" } }, sky: { "day-clear": "s.webp" } });
   const charging = renderHouse(gridCharge, { ...opts, sky: { key: "day-clear", fx: "", night: false } });
   assert.match(charging, /class="h-bat pulse" filter="url\(#eoc-hsoft\)" style="color:var\(--eoc-gridcharge\)"/);
   assert.match(charging, /src="d\.webp"/);
@@ -114,4 +114,21 @@ test("ring: share of own energy and the battery direction", () => {
   assert.match(html, /100 % eigen/);
   assert.match(html, /↑ 259 W/);
   assert.match(renderRing(gridCharge, opts), /0 % eigen/);
+});
+
+test("house scene: the classic family house as a second model", () => {
+  setFlowAssets({
+    house: { balcony: { day: "d.webp", night: "n.webp" }, classic: { day: "cd.webp", night: "cn.webp" } },
+    sky: {},
+  });
+  const day = { key: "day-clear", fx: "", night: false };
+  const night = { key: "night-clear", fx: "", night: true };
+  const classic = renderHouse(evening, { ...opts, house: "classic", sky: day });
+  assert.match(classic, /src="cd\.webp"/);
+  // Its own layout: the grid leg comes down the pole at x 1403.
+  assert.match(classic, /M1403 315/);
+  assert.match(renderHouse(evening, { ...opts, house: "classic", sky: night }), /src="cn\.webp"/);
+  // Default and unknown values: the balcony house.
+  assert.match(renderHouse(evening, { ...opts, sky: day }), /src="d\.webp"/);
+  assert.match(renderHouse(evening, { ...opts, house: "villa", sky: night }), /src="n\.webp"/);
 });

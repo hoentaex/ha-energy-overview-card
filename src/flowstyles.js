@@ -7,7 +7,7 @@ import { moreAttrs } from "./more.js";
 import { esc, fmtNum, fmtPower } from "./shared.js";
 
 let ASSETS = { house: {}, sky: {} };
-/** Registers the image URLs: { house: { day, night }, sky: { "day-clear": url, … } }. */
+/** Registers the image URLs: { house: { balcony: { day, night }, classic: { day, night } }, sky: { "day-clear": url, … } }. */
 export const setFlowAssets = (a) => {
   ASSETS = a;
 };
@@ -135,7 +135,39 @@ const houseGeometry = (shift) => ({
   chips: { solar: [930, 70, "c"], house: [470, 880, "c"], battery: [1190 + shift, 890, "c"], grid: [1500, 200, "r"] },
   batIcon: [994 + shift, 816, 32, 67],
 });
-const HOUSES = { day: houseGeometry(0), night: houseGeometry(12) };
+// The compact family house of 0.1–0.4.0 (`house_model: classic`): one render for day and night with the same layout.
+const CLASSIC = {
+  legs: {
+    solar: [
+      [850, 334],
+      [850, 545],
+      [940, 545],
+    ],
+    house: [
+      [735, 630],
+      [860, 630],
+      [860, 578],
+      [940, 578],
+    ],
+    battery: [
+      [1040, 740],
+      [985, 740],
+      [985, 600],
+    ],
+    grid: [
+      [1403, 315],
+      [1403, 555],
+      [1003, 555],
+    ],
+  },
+  chips: { solar: [770, 62, "c"], house: [560, 905, "c"], battery: [1160, 915, "c"], grid: [1500, 170, "r"] },
+  batIcon: [1100, 734, 36, 72],
+};
+export const HOUSE_MODELS = ["balcony", "classic"];
+const HOUSES = {
+  balcony: { day: houseGeometry(0), night: houseGeometry(12) },
+  classic: { day: CLASSIC, night: CLASSIC },
+};
 
 /** Orthogonal polyline → path with rounded corners. */
 export function roundPath(pts, r = 24) {
@@ -220,7 +252,9 @@ export function renderHouse(live, opts) {
   const { t, lang } = opts;
   const p = flowParts(live, opts.threshold);
   const soc = Number.isFinite(live.soc) ? Math.max(0, Math.min(100, live.soc)) : null;
-  const HOUSE = opts.sky?.night ? HOUSES.night : HOUSES.day;
+  const model = HOUSES[opts.house] ? opts.house : "balcony";
+  const tod = opts.sky?.night ? "night" : "day";
+  const HOUSE = HOUSES[model][tod];
   const L = HOUSE.legs;
   const exporting = p.export > 0 && p.export >= p.import;
   const legs = [
@@ -243,7 +277,7 @@ export function renderHouse(live, opts) {
   };
   const batW = p.charge || p.discharge;
   const batSub = p.charge ? t("charging") : p.discharge ? t("discharging") : t("standby");
-  const img = opts.sky?.night ? ASSETS.house.night : ASSETS.house.day;
+  const img = ASSETS.house[model]?.[tod];
   const aria = t("flow_aria", {
     solar: fmtPower(live.solar, lang),
     grid: fmtPower(exporting ? live.grid_export : live.grid_import, lang),
@@ -255,7 +289,7 @@ export function renderHouse(live, opts) {
     "fs-house",
     opts,
     `<div class="scene" role="img" aria-label="${esc(aria)}">
-      ${img ? `<img data-keep="house:${opts.sky?.night ? "n" : "d"}" src="${img}" alt="" width="1536" height="1024">` : ""}
+      ${img ? `<img data-keep="house:${model}:${tod}" src="${img}" alt="" width="1536" height="1024">` : ""}
       <svg viewBox="0 0 1536 1024" aria-hidden="true">
         <defs>
           <!-- Filter regions in scene units, not relative to each path: a straight leg has a zero-height (or zero-width)
