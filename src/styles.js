@@ -148,15 +148,6 @@ button:focus-visible { outline: 2px solid var(--eoc-accent); outline-offset: 2px
 .overlay { position: absolute; left: 0; width: 100%; pointer-events: none; overflow: visible; }
 
 /* footer */
-.foot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.foot .tile { padding: 10px 12px; gap: 2px; }
-.foot .k { font-size: 11.5px; color: var(--eoc-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.foot .v { font-size: 15px; font-weight: 700; white-space: nowrap; }
-.foot .v span { font-size: 11.5px; font-weight: 400; color: var(--eoc-sub); }
-.fc { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--eoc-sub); }
-.fc .bar { flex: 1 1 auto; height: 6px; }
-.fc .bar div { height: 6px; background: var(--eoc-pv); }
-.fc b { flex: none; color: var(--eoc-text); font-weight: 500; }
 
 /* mini card */
 .mini { padding: 12px 12px 12px 16px; flex-direction: row; align-items: center; gap: 14px; }

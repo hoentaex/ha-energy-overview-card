@@ -37,7 +37,10 @@ Aufbau und Look orientieren sich an den Karten von [juju35](https://github.com/j
   „Akku versorgt Haus“, „Einspeisung“). Vier Darstellungen zur Wahl, siehe [Energiefluss-Darstellungen](#energiefluss-darstellungen).
 - **Zeitraum Tag / Woche / Monat** (unbegrenzt zurückblättern): Bilanz mit Verbrauch (aus Solar / Akku / Netz) und
   Erzeugung (ins Haus / in den Akku / Einspeisung), Autarkie, Eigenverbrauch, CO₂ gespart.
-- **Leistungsdiagramm** des Tages (Netzbezug, Einspeisung, PV, Verbrauch, Akku-Ladestand) mit Fadenkreuz.
+- **Leistungsdiagramm** des Tages (Netzbezug, Einspeisung, PV, Verbrauch, Akku-Ladestand) mit Fadenkreuz, darunter
+  Kennzahl-Kacheln mit der Leistung jetzt und der Tagesspitze (an anderen Tagen die Spitze und wann).
+- **Kacheln** für die Energie des Zeitraums: Netzbezug, Einspeisung, Akku geladen und heute PV gegen die Prognose.
+  Fehlt ein Wert, entfällt seine Kachel und die übrigen rücken ohne Lücke nach.
 - **Verlauf** als Säulen: Verbrauch (mit Nachtbereichen), Solar (heute mit Prognose) und Akku (Ladung nach oben,
   Entladung nach unten, Ladestand-Linie).
 - **Nicht enthalten:** Steuerlogik, Kosten und Tarife – dafür gibt es die Tibber Battery Card.
@@ -246,8 +249,8 @@ Jede Säule ist ein Button: Hover, Fokus oder Antippen zeigt die Werte in der Ze
 stehen die Werte über (und beim Akku die Entladung unter) den Säulen; im Monat sind künftige Tage blasse Platzhalter.
 
 Werte mit eigener Entität sind anklickbar und öffnen den normalen Home-Assistant-Dialog dieser Entität (Verlauf,
-Einstellungen): die Live-Werte im Energiefluss, die Werte über dem Leistungsdiagramm, Netzbezug, Einspeisung und
-Akku geladen in der Fußzeile sowie PV und Prognose darunter. Ein berechneter Wert ohne Entität (etwa der
+Einstellungen): die Live-Werte im Energiefluss, die Werte über dem Leistungsdiagramm und die Kacheln (Leistung jetzt,
+Netzbezug, Einspeisung, Akku geladen, PV gegen Prognose). Ein berechneter Wert ohne Entität (etwa der
 Verbrauch ohne `house_power_entity`) bleibt normaler Text, außer `house_info_entity` nennt einen Sensor für den Dialog.
 
 ### Mini-Karte
@@ -359,12 +362,13 @@ A Lovelace card for a **PV system with a home battery**: live energy flow, balan
 
 **What it shows:** the live flow between solar, grid, home and battery with a status pill; for a day, week or month
 (page back without limit) the balance of consumption (from solar / battery / grid) and production (to home / battery /
-export), self-sufficiency, self-consumption and CO₂ saved; the day's power chart with a crosshair; and a history of
+export), self-sufficiency, self-consumption and CO₂ saved; the day's power chart with a crosshair and KPI tiles for the power now and the day's peak; KPI tiles for the
+period's grid import, export, battery charged and PV against today's forecast; and a history of
 consumption (with night blocks), solar (with today's forecast) and battery (charge up, discharge down, state-of-charge
 line). **Not included:** control logic, costs and tariffs.
 
 Values backed by an entity open Home Assistant's own dialog of that entity: the live values of the flow, the values over
-the power chart, and grid import, export, battery charged and PV / forecast in the footer. A computed value without an
+the power chart, and the KPI tiles. A computed value without an
 entity (consumption without `house_power_entity`) stays plain text, unless `house_info_entity` names a sensor for the
 dialog (it is not used in the calculation).
 

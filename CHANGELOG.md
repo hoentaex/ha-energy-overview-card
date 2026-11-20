@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 (2026-11-20)
+
+- **KPI tiles** (as in the consumers card's tiles view, and the oil and heating cards): a round icon, the label, the
+  value large with a small unit, a sub line and a thin bar.
+- **Under the power chart:** grid import, export, consumption and PV. Today the power now, refreshed with the live
+  values, with the day's peak and its time and a bar against it; another day shows its peak and when.
+- **The footer** (grid import, export, battery charged, PV against today's forecast) becomes tiles; the forecast tile
+  only today. No gaps: a tile without a value is left out and the last tile of a short row widens. A click opens the
+  sensor's dialog as before.
+
 ## 0.6.1 (2026-11-20)
 
 - Consumers card: `include` adds sensors to the detected ones, for example a sub-meter for the garden that the

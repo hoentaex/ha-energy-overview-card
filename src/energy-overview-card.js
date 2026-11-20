@@ -8,6 +8,7 @@
  * Layout and look follow the cards of juju35 (https://github.com/juju35). MIT licence.
  */
 import { BALANCE_STYLE, patchBalance, renderBalance } from "./balancecard.js";
+import { KPI_STYLE } from "./kpi.js";
 import { bindMore, MORE_STYLE, moreIds } from "./more.js";
 import {
   Cache,
@@ -36,6 +37,7 @@ import {
   defaultSel,
   historyReadout,
   historyUnits,
+  powerNow,
   powerReadoutHTML,
   powerTitle,
   RENDERERS,
@@ -49,7 +51,7 @@ import { daySun } from "./sun.js";
 import { tzOf } from "./tz.js";
 
 const VERSION = __VERSION__;
-const STYLE = BASE_STYLE + BANNER_STYLE + MORE_STYLE;
+const STYLE = BASE_STYLE + BANNER_STYLE + MORE_STYLE + KPI_STYLE;
 const TICK = 60e3;
 
 // Config keys holding entity ids: their states decide when the live part re-renders.
@@ -340,6 +342,9 @@ export class EnergyOverviewCard extends HTMLElement {
         if (old) n.replaceWith(old);
       }
     }
+    // The power-now tiles under the chart follow the live values too.
+    const pnow = this.shadowRoot.querySelector("[data-pnow]");
+    if (pnow) pnow.innerHTML = powerNow(ctx);
     animateSky(this.shadowRoot);
     this._fitBanner();
     if (focus === "[data-close]") this.shadowRoot.querySelector(focus)?.focus({ preventScroll: true });

@@ -7,7 +7,8 @@ import { esc, fmtDay, fmtEnergy, fmtNum, fmtPower, fmtTime, fmtWeekday } from ".
 import { nightBlocks } from "./sun.js";
 import { svgIcon } from "./icons.js";
 import { renderBanner } from "./banner.js";
-import { moreAttrs, moreSpan } from "./more.js";
+import { kpiGrid } from "./kpi.js";
+import { moreSpan } from "./more.js";
 
 export const STATUS_COLOR = {
   grid_house: "var(--eoc-imp)",
@@ -147,7 +148,57 @@ export function power(ctx) {
     ${chart.html}
     <div class="xaxis p"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>
     <div class="chips" role="group" aria-label="${esc(t("toggle_lines"))}">${chips}</div>
-  </div>`;
+  </div>
+  <div data-pnow>${powerNow(ctx)}</div>`;
+}
+
+/** W or kW as [number, unit]. */
+const powerParts = (w, lang) => (Math.abs(w) >= 1000 ? [fmtNum(w / 1000, lang, 2), "kW"] : [fmtNum(w, lang, 0), "W"]);
+
+/**
+ * Four tiles under the power chart: grid import, export, consumption and PV. Today they show the power now (the
+ * card refreshes them with the live values) against the day's peak; another day shows its peak and when.
+ */
+export function powerNow(ctx) {
+  const { t, lang, tz, power: p, live = {}, more = {} } = ctx;
+  if (ctx.kind !== "day" || !p || !Object.keys(p.series).length) return "";
+  const now = ctx.isCurrentPeriod;
+  const tile = (key, liveKey, label, icon, color, id) => {
+    const vals = p.series[key];
+    if (!vals) return null;
+    let peak = null;
+    let at = -1;
+    vals.forEach((v, i) => {
+      if (Number.isFinite(v) && (peak === null || v > peak)) {
+        peak = v;
+        at = i;
+      }
+    });
+    const cur = now ? live[liveKey] : peak;
+    if (!Number.isFinite(cur)) return null;
+    const [v, u] = powerParts(cur, lang);
+    const when = at >= 0 ? fmtTime(new Date(p.cells[at]), lang, tz) : "";
+    const peakText = peak !== null && peak > 0 ? `${fmtPower(peak, lang)} · ${when}` : "";
+    return {
+      k: t(label),
+      v,
+      u,
+      icon,
+      c: color,
+      s: now ? (peakText ? t("k_peak_today", { v: peakText }) : "") : when ? t("k_peak_at", { at: when }) : "",
+      p: now && peak > 0 ? (cur / peak) * 100 : undefined,
+      more: id,
+    };
+  };
+  return kpiGrid(
+    [
+      tile("grid_import", "grid_import", "grid_import", "download", "var(--eoc-imp)", more.grid_import),
+      tile("grid_export", "grid_export", "grid_export", "upload", "var(--eoc-exp)", more.grid_export),
+      tile("house", "house", "consumption", "home", "var(--eoc-house)", more.house),
+      tile("pv", "solar", "pv", "solar", "var(--eoc-pv)", more.solar),
+    ],
+    { cols: 2 },
+  );
 }
 
 // ---------- balance ----------
@@ -335,20 +386,44 @@ export function footer(ctx) {
       ? s.grid_import
       : (s.house_from_grid || 0) + (s.grid_to_battery || 0);
   const more = ctx.more || {};
-  const tile = (k, v, id) =>
-    `<div class="tile"${moreAttrs(id)}><div class="k">${esc(k)}</div><div class="v">${fmtNum(v, lang, 2)} <span>kWh</span></div></div>`;
-  let fc = "";
-  if (ctx.kind === "day" && ctx.isCurrentPeriod && Number.isFinite(ctx.forecastToday) && ctx.forecastToday > 0) {
-    const ratio = (s.solar || 0) / ctx.forecastToday;
-    fc = `<div class="fc"><span>${esc(t("pv_vs_forecast"))}</span>
-      <div class="bar"><div style="width:${Math.min(100, ratio * 100).toFixed(1)}%"></div></div>
-      <b>${moreSpan(more.e_solar, fmtNum(s.solar, lang, 2))} / ${moreSpan(more.forecast, fmtEnergy(ctx.forecastToday, lang))} · ${Math.round(ratio * 100)} %</b></div>`;
-  }
-  return `<div class="foot">
-    ${tile(t("grid_import"), imp, more.e_grid_import)}
-    ${tile(t("grid_export"), s.grid_export, more.e_grid_export)}
-    ${tile(t("battery_charged"), s.battery_charge, more.e_battery_charge)}
-  </div>${fc}`;
+  const kwh = (v) => (Number.isFinite(v) ? fmtNum(v, lang, 2) : null);
+  const fc =
+    ctx.kind === "day" && ctx.isCurrentPeriod && Number.isFinite(ctx.forecastToday) && ctx.forecastToday > 0
+      ? ctx.forecastToday
+      : null;
+  const ratio = fc ? (s.solar || 0) / fc : null;
+  return kpiGrid(
+    [
+      { k: t("grid_import"), v: kwh(imp), u: "kWh", icon: "download", c: "var(--eoc-imp)", more: more.e_grid_import },
+      {
+        k: t("grid_export"),
+        v: kwh(s.grid_export),
+        u: "kWh",
+        icon: "upload",
+        c: "var(--eoc-exp)",
+        more: more.e_grid_export,
+      },
+      {
+        k: t("battery_charged"),
+        v: kwh(s.battery_charge),
+        u: "kWh",
+        icon: "battery",
+        c: "var(--eoc-bat)",
+        more: more.e_battery_charge,
+      },
+      fc && {
+        k: t("pv_vs_forecast"),
+        v: kwh(s.solar || 0),
+        u: `/ ${fmtEnergy(fc, lang)}`,
+        icon: "solar",
+        c: "var(--eoc-pv)",
+        p: ratio * 100,
+        s: t("k_of_forecast", { v: Math.round(ratio * 100) }),
+        more: more.e_solar,
+      },
+    ],
+    { cols: 2 },
+  );
 }
 
 export const RENDERERS = { header, flow, period, power, balance, history, footer };
