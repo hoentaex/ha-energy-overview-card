@@ -22,6 +22,7 @@
   ["sensor.shelly_stromzahler_phase_b_active_power", "214.9", "Shelly Stromzähler  Phase B Leistung", "d_3em_b", "Shelly Stromzähler  Phase B", null, "shelly"],
   ["sensor.shelly_stromzahler_gesamt_total_active_power", "334.702", "Shelly Stromzähler Gesamt Leistung", "d_3em", "Shelly Stromzähler Gesamt", null, "shelly"],
   ["sensor.balkon_sud_power", "unavailable", "Balkon Süd Power", "d_balkon", "Balkon Süd", "Keller", "mqtt"],
+  ["sensor.balkon_sud_powerdc", "unavailable", "Balkon Süd PowerDC", "d_balkon", "Balkon Süd", "Keller", "mqtt"],
   ["sensor.balkonkraftwerk_power", "9", "Balkonkraftwerk Leistung", "d_bkw", "Balkonkraftwerk", "Keller", "mqtt"],
   ["sensor.wohnzimmer_schreibtisch_power", "60.06", "Wohnzimmer Schreibtisch Leistung", "d_ws", "Wohnzimmer Schreibtisch", "Wohnzimmer", "mqtt"],
   ["sensor.power_production_now", "0", "Solar production forecast Geschätzte Erzeugungsleistung – jetzt", "d_fc", "Solar production forecast", "Keller", "forecast_solar"],

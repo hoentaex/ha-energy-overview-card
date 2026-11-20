@@ -371,6 +371,7 @@ const ED = {
     show_untracked: "„Nicht erfasst“ zeigen (Haus minus Geräte)",
     entities: "Geräte (leer = automatisch erkennen)",
     exclude: "Nicht anzeigen",
+    include: "Zusätzlich anzeigen",
     house_power_entity: "Hausverbrauch (leer = aus dem Energie-Dashboard)",
     illustration: "Illustrierter Kopf",
     animations: "Animationen",
@@ -381,8 +382,9 @@ const ED = {
     language: "Sprache",
     lang_auto: "automatisch",
     h_entities:
-      "Ohne Auswahl: alle Leistungssensoren von Geräten, ohne PV, Netz, Akku, Zähler, Summen und den Eigenverbrauch der Steckdosen. Hat das Energie-Dashboard einzelne Geräte mit Leistungssensor, werden diese genommen.",
+      "Ohne Auswahl: alle Leistungssensoren von Geräten oder mit Raum, ohne PV, Netz, Akku, Zähler, Summen und den Eigenverbrauch der Steckdosen. Hat das Energie-Dashboard einzelne Geräte mit Leistungssensor, werden diese genommen.",
     h_exclude: "Zum Beispiel eine Steckdosenleiste, deren Ausgänge schon einzeln gezählt werden.",
+    h_include: "Kommt zur automatischen Erkennung dazu, zum Beispiel ein Unterzähler für Garten oder Garage.",
   },
   en: {
     name: "Name",
@@ -401,6 +403,7 @@ const ED = {
     show_untracked: "Show “untracked” (home minus devices)",
     entities: "Devices (empty = detect automatically)",
     exclude: "Hide",
+    include: "Also show",
     house_power_entity: "Home power (empty = from the Energy dashboard)",
     illustration: "Illustrated header",
     animations: "Animations",
@@ -411,8 +414,9 @@ const ED = {
     language: "Language",
     lang_auto: "automatic",
     h_entities:
-      "Empty: every power sensor of a device, without PV, grid, battery, meters, totals and the smart plugs' own use. If the Energy dashboard lists individual devices with a power sensor, those are taken.",
+      "Empty: every power sensor of a device or with a room, without PV, grid, battery, meters, totals and the smart plugs' own use. If the Energy dashboard lists individual devices with a power sensor, those are taken.",
     h_exclude: "For example a power strip whose outlets are already counted one by one.",
+    h_include: "Added to what is detected, for example a sub-meter for the garden or the garage.",
   },
 };
 
@@ -449,6 +453,7 @@ export const consumersSchema = (lang) => {
     { name: "view_switch", selector: { boolean: {} } },
     { name: "show_untracked", selector: { boolean: {} } },
     { name: "entities", selector: powerSel },
+    { name: "include", selector: powerSel },
     { name: "exclude", selector: powerSel },
     { name: "house_power_entity", selector: { entity: { domain: "sensor", device_class: "power" } } },
     {
@@ -490,7 +495,7 @@ const FORM_DEFAULTS = {
 /** Config → form: defaults filled in, entity lists as ids (YAML objects with a name keep their name, see below). */
 export const consumersToForm = (config) => {
   const d = { ...FORM_DEFAULTS, ...config };
-  for (const k of ["entities", "exclude"])
+  for (const k of ["entities", "include", "exclude"])
     d[k] = (config[k] || []).map((e) => (typeof e === "string" ? e : e?.entity)).filter(Boolean);
   return d;
 };
@@ -503,7 +508,7 @@ export const consumersFromForm = (data, original = {}) => {
     const empty = v === "" || v === undefined || v === null || (Array.isArray(v) && !v.length);
     if (empty) continue;
     if (k in FORM_DEFAULTS && v === FORM_DEFAULTS[k]) continue;
-    if (k === "entities" || k === "exclude") {
+    if (k === "entities" || k === "include" || k === "exclude") {
       const objs = new Map(
         (original[k] || []).filter((e) => typeof e === "object" && e?.entity).map((e) => [e.entity, e]),
       );
@@ -537,7 +542,7 @@ export class EnergyOverviewConsumersCardEditor extends HTMLElement {
       this._form.computeLabel = (s) => (ED[this._lang()] || ED.en)[s.name] ?? s.name;
       this._form.computeHelper = (s) => {
         const L = ED[this._lang()] || ED.en;
-        return s.name === "entities" ? L.h_entities : s.name === "exclude" ? L.h_exclude : undefined;
+        return { entities: L.h_entities, include: L.h_include, exclude: L.h_exclude }[s.name];
       };
       this._form.addEventListener("value-changed", (ev) => {
         ev.stopPropagation();

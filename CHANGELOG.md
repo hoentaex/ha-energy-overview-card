@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.1 (2026-11-20)
+
+- Consumers card: `include` adds sensors to the detected ones, for example a sub-meter for the garden that the
+  automatic detection skips as a meter. In the visual editor next to `exclude`.
+- Detection also takes power sensors without a device when they have a room: the legacy Homematic integration creates
+  no devices, so its metering plugs were missing. Templates and helpers (no device, no room) stay out.
+- Inverters are recognised by their DC power or yield sensors (OpenDTU / AhoyDTU over MQTT) instead of by the word
+  "Balkon", so a balcony's Christmas lights count as a consumer again.
+
 ## 0.6.0 (2026-11-20)
 
 - New card `custom:energy-overview-consumers-card`: every device that draws power right now, largest first. On top the

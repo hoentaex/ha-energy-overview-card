@@ -294,9 +294,11 @@ liegen, stehen eingeklappt unten.
 
 Ohne `entities` sucht die Karte selbst: Hat das Energie-Dashboard einzelne Geräte mit Leistungssensor, nimmt sie diese
 (ohne die Geräte, in denen andere schon mitgezählt sind). Sonst nimmt sie alle Leistungssensoren, die zu einem Gerät
-gehören, ohne PV, Wechselrichter, Netz, Akku, Zähler, Summen, Helfer und den Eigenverbrauch der Steckdosen
-(`…_device_power`). Was doppelt zählt (zum Beispiel eine Steckdosenleiste, deren Ausgänge einzeln gemessen werden),
-kommt unter `exclude`. Die Namen kommen vom Gerät oder aus dem Sensornamen ohne „Leistung“, „Switch 0“ usw.
+gehören oder einem Raum zugeordnet sind (die alte Homematic-Integration legt keine Geräte an), ohne PV, Wechselrichter
+(auch an ihren DC- und Ertragssensoren erkannt), Netz, Akku, Zähler, Summen, Helfer und den Eigenverbrauch der
+Steckdosen (`…_device_power`). Was zusätzlich dazugehört, etwa ein Unterzähler für Garten oder Garage, kommt unter
+`include`; was doppelt zählt (zum Beispiel eine Steckdosenleiste, deren Ausgänge einzeln gemessen werden), unter
+`exclude`. Die Namen kommen vom Gerät oder aus dem Sensornamen ohne „Leistung“, „Switch 0“ usw.
 
 ```yaml
 type: custom:energy-overview-consumers-card
@@ -304,6 +306,9 @@ view: list            # list | room | tiles (Startansicht)
 min_power: 1          # W, darunter gilt ein Gerät als aus
 exclude:
   - sensor.wohnzimmer_schreibtisch_power
+include:
+  - entity: sensor.stromzahler_garten_leistung
+    name: Garten
 # oder die Geräte selbst festlegen:
 # entities:
 #   - sensor.server_rack_10_power
@@ -321,6 +326,7 @@ exclude:
 | `max_items` | Höchstens so viele Geräte (0 = alle) | `0` |
 | `show_untracked` | „Nicht erfasst“ zeigen | `true` |
 | `entities` | Feste Geräteliste (Entity-IDs oder `{ entity, name, icon, area }`) | automatisch |
+| `include` | Zusätzlich zur Erkennung zeigen (IDs oder `{ entity, name, icon, area }`) | – |
 | `exclude` | Diese Sensoren nicht zeigen | – |
 | `house_power_entity` | Hausverbrauch; leer = aus dem Energie-Dashboard bzw. aus der Bilanz | – |
 | `name`, `subtitle`, `icon`, `illustration`, `illustration_theme`, `animations`, `language` | wie bei der Hauptkarte | |
@@ -413,8 +419,9 @@ flows. A click opens the main card. Same options.
 with its room, how long it has been on, a sparkline of the last hour and its share of the home, plus what no meter
 covers ("untracked"). A switch above the list changes between list, room and tiles (`view`, `view_switch`);
 `layout: mini` shows the header, the top three and the bar and opens the full card. Without `entities` it takes the
-Energy dashboard's individual devices with a power sensor, or else every power sensor of a device except generation,
-grid, battery, meters, totals, helpers and the smart plugs' own use; hide double counts with `exclude`. Options:
+Energy dashboard's individual devices with a power sensor, or else every power sensor of a device or with a room
+except generation, grid, battery, meters, totals, helpers and the smart plugs' own use; add sub-meters with `include`,
+hide double counts with `exclude`. Options:
 `min_power` (1 W), `max_items`, `show_untracked`, `house_power_entity` and the header options of the main card.
 
 **Visual editor:** all cards can be set up entirely in the UI editor; new cards take the power sensors from the

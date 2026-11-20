@@ -42,7 +42,7 @@ const INFRA = [
   "photovolt",
   "inverter",
   "wechselrichter",
-  "balkon",
+  "balkonkraftwerk",
   "einspeis",
   "feed_in",
   "feedin",
@@ -75,6 +75,9 @@ const INFRA = [
   "_device_power",
 ];
 const INFRA_PLATFORMS = new Set([
+  "alpha_ess",
+  "alphaess",
+  "evcc",
   "fronius",
   "solaredge",
   "sma",
@@ -104,6 +107,17 @@ const INFRA_PLATFORMS = new Set([
   "zendure_ha",
   "ecoflow_cloud",
 ]);
+
+// Entities that make their device a generator (Hoymiles via OpenDTU / AhoyDTU over MQTT and the like).
+const GENERATOR_ENTITY = /(^|_)(powerdc|power_dc|dc_power|yieldday|yield_day|yieldtotal|yield_total|pv_?\d_power)(_|$)/;
+
+/** Device ids that carry a DC power or yield sensor: inverters, whatever their name. */
+export function generatorDevices(hass) {
+  const out = new Set();
+  for (const [id, e] of Object.entries(hass?.entities || {}))
+    if (e?.device_id && GENERATOR_ENTITY.test(id.replace(/^[a-z_]+\./, ""))) out.add(e.device_id);
+  return out;
+}
 
 const factorOf = (st) => (norm(st?.attributes?.unit_of_measurement) === "kw" ? 1000 : 1);
 
@@ -142,34 +156,43 @@ export function prefsConsumers(prefs) {
     .map((d) => ({ entity: d.stat_rate, name: d.name || undefined }));
 }
 
+const asItem = (e) => (typeof e === "string" ? { entity: e } : e);
+
 /**
- * The entities the card lists, as [{ entity, name?, icon? }]: `entities` from the config as given; else the Energy
- * dashboard's devices with a power sensor; else every power sensor that belongs to a device and is not generation,
- * grid, battery, meter, total or helper (see INFRA), minus `exclude`.
+ * The entities the card lists, as [{ entity, name?, icon?, area? }]: `entities` from the config as given; else the
+ * Energy dashboard's devices with a power sensor; else every power sensor that belongs to a device or has a room (the
+ * legacy Homematic integration creates no devices) and is not generation, grid, battery, meter, total or helper (see
+ * INFRA). `include` adds sensors to what was found (a sub-meter, say), `exclude` removes them.
  */
 export function consumerEntities(hass, config = {}, prefs = null) {
-  const exclude = new Set((config.exclude || []).map((e) => (typeof e === "string" ? e : e?.entity)));
-  if (Array.isArray(config.entities) && config.entities.length)
-    return config.entities
-      .map((e) => (typeof e === "string" ? { entity: e } : e))
-      .filter((e) => e?.entity && !exclude.has(e.entity));
-  const fromPrefs = prefsConsumers(prefs).filter((e) => !exclude.has(e.entity));
-  if (fromPrefs.length) return fromPrefs;
+  const exclude = new Set((config.exclude || []).map((e) => asItem(e)?.entity));
+  const include = (config.include || []).map(asItem).filter((e) => e?.entity);
+  const finish = (found) => {
+    const seen = new Set(found.map((e) => e.entity));
+    const extra = include.filter((e) => !seen.has(e.entity) && seen.add(e.entity));
+    return [...found, ...extra].filter((e) => e?.entity && !exclude.has(e.entity));
+  };
+  if (Array.isArray(config.entities) && config.entities.length) return finish(config.entities.map(asItem));
+  const fromPrefs = prefsConsumers(prefs);
+  if (fromPrefs.length) return finish(fromPrefs);
   const sources = sourceIds(prefs, config);
   const reg = hass?.entities;
+  const generators = generatorDevices(hass);
   const out = [];
   for (const [id, st] of Object.entries(hass?.states || {})) {
     if (!isPowerSensor(st, id) || exclude.has(id) || sources.has(id)) continue;
     const e = reg?.[id];
-    // With the registry at hand (Home Assistant), only sensors of a device: templates and helpers have none.
-    if (reg && (!e?.device_id || e.hidden || e.entity_category)) continue;
+    // With the registry at hand (Home Assistant), only sensors of a device or with a room: templates and helpers
+    // have neither.
+    if (reg && ((!e?.device_id && !e?.area_id) || e.hidden || e.entity_category)) continue;
     if (e?.platform && INFRA_PLATFORMS.has(e.platform)) continue;
+    if (e?.device_id && generators.has(e.device_id)) continue;
     const dev = e?.device_id ? hass.devices?.[e.device_id] : null;
     const hay = `${norm(id)} ${norm(dev?.name_by_user || dev?.name)}`;
     if (INFRA.some((w) => hay.includes(w))) continue;
     out.push({ entity: id });
   }
-  return out;
+  return finish(out);
 }
 
 // ---------- names, rooms, kinds ----------

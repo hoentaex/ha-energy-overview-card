@@ -178,9 +178,65 @@ test("formatting and views", () => {
 
 test("editor: entity objects from YAML survive, defaults are dropped", () => {
   const original = { entities: [{ entity: "sensor.a", name: "A" }, "sensor.b"], view: "room" };
+  assert.deepEqual(consumersToForm({ include: [{ entity: "sensor.g", name: "Garten" }] }).include, ["sensor.g"]);
   const form = consumersToForm(original);
   assert.deepEqual(form.entities, ["sensor.a", "sensor.b"]);
   assert.equal(form.min_power, 1);
   const back = consumersFromForm({ ...form, entities: ["sensor.a", "sensor.c"] }, original);
   assert.deepEqual(back, { entities: [{ entity: "sensor.a", name: "A" }, "sensor.c"], view: "room" });
+});
+
+test("detection: sensors without a device but with a room (legacy Homematic), include for a sub-meter", () => {
+  const st = (fn) => ({
+    state: "50",
+    attributes: { device_class: "power", unit_of_measurement: "W", friendly_name: fn },
+  });
+  const z = {
+    states: {
+      "sensor.0001d3c99c350c_power": st("Keller Serverschrank POWER"),
+      "sensor.serverschrank_keller_stats": st("Serverschrank Keller Stats"),
+      "sensor.stromzahler_garten_leistung": st("Stromzähler Garten Leistung"),
+      "sensor.stromzahler_garten_phase_b_leistung": st("Stromzähler Garten Phase B Leistung"),
+      "sensor.alpha_ess_total_power_inverter": st("AlphaESS Inverter Inverter Power"),
+      "sensor.balkon_weihnachtsbeleuchtung_power": st("Balkon Weihnachtsbeleuchtung Leistung"),
+    },
+    entities: {
+      "sensor.0001d3c99c350c_power": { platform: "homematic", area_id: "buro_keller" },
+      "sensor.serverschrank_keller_stats": { platform: "template" },
+      "sensor.stromzahler_garten_leistung": { platform: "shelly", device_id: "g" },
+      "sensor.stromzahler_garten_phase_b_leistung": { platform: "shelly", device_id: "gb" },
+      "sensor.alpha_ess_total_power_inverter": { platform: "alpha_ess", device_id: "a" },
+      "sensor.balkon_weihnachtsbeleuchtung_power": { platform: "shelly", device_id: "w" },
+    },
+    devices: {
+      g: { name: "Stromzähler Garten" },
+      gb: { name: "Stromzähler Garten Phase B" },
+      a: { name: "AlphaESS Inverter" },
+      w: { name: "Balkon Weihnachtsbeleuchtung" },
+    },
+    areas: { buro_keller: { name: "Büro Keller" } },
+  };
+  const ids = (config) => consumerEntities(z, config, null).map((e) => e.entity);
+  assert.deepEqual(ids({}), ["sensor.0001d3c99c350c_power", "sensor.balkon_weihnachtsbeleuchtung_power"]);
+  assert.deepEqual(ids({ include: ["sensor.stromzahler_garten_leistung"] }), [
+    "sensor.0001d3c99c350c_power",
+    "sensor.balkon_weihnachtsbeleuchtung_power",
+    "sensor.stromzahler_garten_leistung",
+  ]);
+  // include with a name, never twice, exclude wins.
+  const withName = consumerEntities(
+    z,
+    { include: [{ entity: "sensor.stromzahler_garten_leistung", name: "Garten" }, "sensor.0001d3c99c350c_power"] },
+    null,
+  );
+  assert.deepEqual(
+    withName.map((e) => e.name || e.entity),
+    ["sensor.0001d3c99c350c_power", "sensor.balkon_weihnachtsbeleuchtung_power", "Garten"],
+  );
+  assert.deepEqual(
+    ids({ include: ["sensor.stromzahler_garten_leistung"], exclude: ["sensor.stromzahler_garten_leistung"] }),
+    ["sensor.0001d3c99c350c_power", "sensor.balkon_weihnachtsbeleuchtung_power"],
+  );
+  assert.equal(consumerName(z, { entity: "sensor.0001d3c99c350c_power" }), "Keller Serverschrank");
+  assert.equal(kindOf("Keller Serverschrank"), "server");
 });
