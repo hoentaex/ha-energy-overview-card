@@ -31,6 +31,7 @@ import { svgIcon } from "./icons.js";
 import "./assets.js";
 import { animateSky } from "./flowstyles.js";
 import "./popup.js";
+import "./consumerscard.js";
 import {
   defaultSel,
   historyReadout,
@@ -807,6 +808,12 @@ for (const card of [
     type: "energy-overview-balance-card",
     name: "Energy Overview Balance Card",
     description: "Today's home consumption as a ring by source, grid and own energy beside it; opens the full card.",
+  },
+  {
+    type: "energy-overview-consumers-card",
+    name: "Energy Overview Consumers Card",
+    description:
+      "Every device drawing power right now, largest first, with its share of the home; list, room or tiles.",
   },
 ]) {
   if (!window.customCards.some((c) => c.type === card.type))

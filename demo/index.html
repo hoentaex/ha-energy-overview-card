@@ -81,12 +81,21 @@
         for (const col of ["light", "dark"]) {
           const el = document.getElementById(col);
           el.replaceChildren();
-          for (const type of ["energy-overview-card", "energy-overview-mini-card", "energy-overview-balance-card"]) {
+          const only = q.get("cards");
+          const list = [
+            ["energy-overview-card"],
+            ["energy-overview-mini-card"],
+            ["energy-overview-balance-card"],
+            ["energy-overview-consumers-card", { name: "Verbraucher", subtitle: "" }],
+            ["energy-overview-consumers-card", { name: "Verbraucher", subtitle: "", layout: "mini" }],
+          ].filter(([type, extra]) => !only || only.split(",").includes(extra?.layout === "mini" ? "consumers-mini" : type.replace("energy-overview-", "")));
+          for (const [type, extra = {}] of list) {
             const card = document.createElement(type);
             const config = ui.minimal.checked ? {} : CONFIG;
             card.setConfig({
               type: `custom:${type}`,
               ...config,
+              ...extra,
               flow_style: ui.style.value,
               ...(ui.sky.checked ? { flow_background: "weather" } : {}),
               ...(q.get("view") ? { history_view: q.get("view") } : {}),

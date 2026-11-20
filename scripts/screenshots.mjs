@@ -65,6 +65,20 @@ try {
     await page.waitForTimeout(300);
     await bal.screenshot({ path: shot(`balance-${theme}`) });
     console.log(`saved screenshots/balance-${theme}.png`);
+    // Consumers card: list in both themes, room and tiles in the light one; the mini layout.
+    const cons = page.locator(`#${theme} energy-overview-consumers-card`).first();
+    await cons.locator(".cr .spark").first().waitFor();
+    await page.waitForTimeout(300);
+    for (const view of theme === "light" ? ["list", "room", "tiles"] : ["list"]) {
+      await cons.locator(`[data-view="${view}"]`).dispatchEvent("click");
+      await page.waitForTimeout(200);
+      await cons.screenshot({ path: shot(`consumers-${view}-${theme}`) });
+      console.log(`saved screenshots/consumers-${view}-${theme}.png`);
+    }
+    await cons.locator('[data-view="list"]').dispatchEvent("click");
+    const consMini = page.locator(`#${theme} energy-overview-consumers-card`).nth(1);
+    await consMini.screenshot({ path: shot(`consumers-mini-${theme}`) });
+    console.log(`saved screenshots/consumers-mini-${theme}.png`);
     await page.setViewportSize({ width: 760, height: 2600 });
     // A dispatched click: the mini card re-renders its row (and the button in the banner) as the demo ticks.
     await mini.locator("[data-open]").dispatchEvent("click");

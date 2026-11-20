@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.0 (2026-11-20)
+
+- New card `custom:energy-overview-consumers-card`: every device that draws power right now, largest first. On top the
+  home now with its sources and a bar split into the five largest consumers, the others and the untracked rest (home
+  minus devices). Each row: room, on since (from the last 6 hours), a sparkline of the last hour, power and share of the
+  home; a click opens the sensor's dialog. A switch changes between list, room and tiles (`view`, `view_switch`, the
+  choice is remembered per browser); idle devices fold away below. Illustrated header with a power strip scene (floor
+  lamp, server, 3D printer; the ground strip in the colour of the current source). `layout: mini` shows the header,
+  the top three and the bar and opens the full card as a dialog. Devices come from `entities`, else from the Energy
+  dashboard's individual devices with a power sensor, else from every power sensor of a device without generation,
+  grid, battery, meters, totals, helpers and the plugs' own use (`exclude` for double counts). Own visual editor.
+
 ## 0.5.1 (2026-11-19)
 
 - Illustrated header: the status pill always sits on the second line, under the title and above the subtitle. It used to

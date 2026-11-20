@@ -282,6 +282,56 @@ type: custom:energy-overview-balance-card
 |---|---|
 | <img src="screenshots/balance-light.png" alt="Bilanz-Karte" width="420"> | <img src="screenshots/balance-dark.png" alt="Bilanz-Karte, dunkel" width="420"> |
 
+### Verbraucher-Karte
+
+`custom:energy-overview-consumers-card` listet alle Geräte, die gerade Strom ziehen, das größte zuerst. Oben steht der
+Hausverbrauch jetzt mit seinen Quellen (Netz, PV, Akku) und ein Balken, der ihn auf die fünf größten Verbraucher, die
+übrigen und den Rest **„nicht erfasst“** aufteilt, also das, was ohne eigene Messung läuft (Haus minus Geräte). Jede
+Zeile zeigt Raum, „seit wann an“ (aus dem Verlauf der letzten 6 Stunden), eine Kurve der letzten Stunde, die Leistung
+und den Anteil am Haus. Ein Klick öffnet den Dialog des Sensors. Über der Liste wechselst du zwischen **Liste**,
+**Raum** und **Kacheln**; die Karte merkt sich die Wahl pro Browser. Geräte, die aus sind oder unter der Schwelle
+liegen, stehen eingeklappt unten.
+
+Ohne `entities` sucht die Karte selbst: Hat das Energie-Dashboard einzelne Geräte mit Leistungssensor, nimmt sie diese
+(ohne die Geräte, in denen andere schon mitgezählt sind). Sonst nimmt sie alle Leistungssensoren, die zu einem Gerät
+gehören, ohne PV, Wechselrichter, Netz, Akku, Zähler, Summen, Helfer und den Eigenverbrauch der Steckdosen
+(`…_device_power`). Was doppelt zählt (zum Beispiel eine Steckdosenleiste, deren Ausgänge einzeln gemessen werden),
+kommt unter `exclude`. Die Namen kommen vom Gerät oder aus dem Sensornamen ohne „Leistung“, „Switch 0“ usw.
+
+```yaml
+type: custom:energy-overview-consumers-card
+view: list            # list | room | tiles (Startansicht)
+min_power: 1          # W, darunter gilt ein Gerät als aus
+exclude:
+  - sensor.wohnzimmer_schreibtisch_power
+# oder die Geräte selbst festlegen:
+# entities:
+#   - sensor.server_rack_10_power
+#   - entity: sensor.steckdosenleiste_schreibtisch_3d_drucker_output_0_leistung
+#     name: 3D-Drucker
+#     icon: mdi:printer-3d
+```
+
+| Option | Bedeutung | Standard |
+|---|---|---|
+| `layout` | `full` (Liste) oder `mini` (Kopf, Top 3 und Balken; öffnet die volle Karte als Dialog) | `full` |
+| `view` | Startansicht: `list`, `room` oder `tiles` | `list` |
+| `view_switch` | Umschalter Liste / Raum / Kacheln zeigen | `true` |
+| `min_power` | Ab dieser Leistung (W) gilt ein Gerät als an | `1` |
+| `max_items` | Höchstens so viele Geräte (0 = alle) | `0` |
+| `show_untracked` | „Nicht erfasst“ zeigen | `true` |
+| `entities` | Feste Geräteliste (Entity-IDs oder `{ entity, name, icon, area }`) | automatisch |
+| `exclude` | Diese Sensoren nicht zeigen | – |
+| `house_power_entity` | Hausverbrauch; leer = aus dem Energie-Dashboard bzw. aus der Bilanz | – |
+| `name`, `subtitle`, `icon`, `illustration`, `illustration_theme`, `animations`, `language` | wie bei der Hauptkarte | |
+
+Farben: `--eoc-consumer-1-color` bis `--eoc-consumer-5-color`, `--eoc-consumer-other-color`, `--eoc-untracked-color`.
+
+| Liste | Raum | Kacheln |
+|---|---|---|
+| <img src="screenshots/consumers-list-light.png" alt="Verbraucher-Karte, Liste" width="300"> | <img src="screenshots/consumers-room-light.png" alt="Verbraucher-Karte, nach Raum" width="300"> | <img src="screenshots/consumers-tiles-light.png" alt="Verbraucher-Karte, Kacheln" width="300"> |
+| <img src="screenshots/consumers-list-dark.png" alt="Verbraucher-Karte, dunkel" width="300"> | <img src="screenshots/consumers-mini-light.png" alt="Verbraucher-Karte, Mini" width="300"> | <img src="screenshots/consumers-mini-dark.png" alt="Verbraucher-Karte, Mini, dunkel" width="300"> |
+
 ### Visueller Editor
 
 Alle Karten lassen sich komplett im visuellen Editor einrichten: Entity-Auswahl für die Live-Werte, Statistik-Auswahl
@@ -358,6 +408,14 @@ grid, today's self-sufficiency); its button opens the main card as a dialog (`po
 **Balance card:** `custom:energy-overview-balance-card` shows today's home consumption as a ring split by grid,
 battery and solar, the grid on the left and the own energy on the right; a light runs along the wires while power
 flows. A click opens the main card. Same options.
+
+**Consumers card:** `custom:energy-overview-consumers-card` lists every device drawing power right now, largest first,
+with its room, how long it has been on, a sparkline of the last hour and its share of the home, plus what no meter
+covers ("untracked"). A switch above the list changes between list, room and tiles (`view`, `view_switch`);
+`layout: mini` shows the header, the top three and the bar and opens the full card. Without `entities` it takes the
+Energy dashboard's individual devices with a power sensor, or else every power sensor of a device except generation,
+grid, battery, meters, totals, helpers and the smart plugs' own use; hide double counts with `exclude`. Options:
+`min_power` (1 W), `max_items`, `show_untracked`, `house_power_entity` and the header options of the main card.
 
 **Visual editor:** all cards can be set up entirely in the UI editor; new cards take the power sensors from the
 Energy dashboard and find a state-of-charge sensor, today's forecast and a weather entity by themselves.

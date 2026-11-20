@@ -21,6 +21,7 @@ const THEME_VARS = [
   "--eoc-night-color",
   "--eoc-night-icon-color",
   "--eoc-accent-color",
+  "--eoc-untracked-color",
 ];
 
 const DIALOG_STYLE = `
@@ -55,7 +56,7 @@ export class EnergyOverviewDialog extends HTMLElement {
     return !!this._card;
   }
 
-  open({ config, hass, opener, label }) {
+  open({ config, hass, opener, label, element = "energy-overview-card" }) {
     this._opener = opener;
     const host = opener?.getRootNode?.()?.host;
     if (host) {
@@ -71,8 +72,8 @@ export class EnergyOverviewDialog extends HTMLElement {
       <div class="backdrop"><div class="panel" role="dialog" aria-modal="true"></div></div>`;
     const panel = this.shadowRoot.querySelector(".panel");
     panel.setAttribute("aria-label", label);
-    this._card = document.createElement("energy-overview-card");
-    this._card.setConfig({ ...config, type: "custom:energy-overview-card", _dialog: true });
+    this._card = document.createElement(element);
+    this._card.setConfig({ ...config, type: `custom:${element}`, _dialog: true });
     this._card.hass = hass;
     panel.append(this._card);
     this.shadowRoot.querySelector(".backdrop").addEventListener("click", (e) => {

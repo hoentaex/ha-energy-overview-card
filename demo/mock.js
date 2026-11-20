@@ -177,7 +177,7 @@ const history = (msg) => {
   const to = Date.parse(msg.end_time);
   const res = {};
   for (const id of msg.entity_ids) {
-    const f = POWER_FIELD[id];
+    const f = POWER_FIELD[id] || CONS_FIELD[id];
     if (!f) continue;
     res[id] = rows.filter((r) => r.t >= from && r.t < to).map((r) => ({ s: f(r).toFixed(1), lu: r.t / 1000 }));
   }
@@ -195,6 +195,74 @@ const forecast = () => {
     wh[new Date(t).toISOString()] = Math.round(sum * (0.85 + 0.3 * rnd(h + dayNo(t))));
   }
   return { demo_forecast: { wh_hours: wh } };
+};
+
+
+// ---------- consumers (custom:energy-overview-consumers-card) ----------
+
+const hourAt = (t) => {
+  const p = parts(t, TZ);
+  return p.h + p.mi / 60;
+};
+const wobble = (t, seed, amp) => 1 + amp * (rnd(t / STEP + seed) - 0.5);
+const between = (h, a, b) => h >= a && h < b;
+
+// [entity, friendly name, device, area, W at time t (row r)]
+const CONSUMERS = [
+  ["sensor.athene_server_switch_0_power", "Athene Server Switch 0 power", "Athene Server", "buero", (t) => 11 * wobble(t, 1, 0.1)],
+  ["sensor.server_rack_10_power", "Server Rack 10 Power", "Shelly Server Rack 10", "buero", (t) => 27 * wobble(t, 2, 0.08)],
+  [
+    "sensor.steckdose_wohnzimmer_output_4_hephaistos_leistung",
+    "Steckdose Wohnzimmer Output 4 - Hephaistos Leistung",
+    "shellypstripg4-98a31679bda8 Output 3",
+    "wohnzimmer",
+    (t) => 12.5 * wobble(t, 3, 0.15),
+  ],
+  [
+    "sensor.schreibtisch_3d_drucker_output_0_leistung",
+    "Schreibtisch 3D Drucker Output 0 Leistung",
+    "shellypstripg4-58e6c50d62f8 Output 0",
+    "buero",
+    (t) => (between(hourAt(t), 9.5, 21) ? 62 * wobble(t, 4, 0.35) : 0.4),
+  ],
+  ["sensor.kuche_sonos_switch_0_power", "Küche Sonos Switch 0 power", "Shelly-Sonos", "kueche", (t) => (between(hourAt(t), 7, 23) ? 6 : 2.1) * wobble(t, 5, 0.1)],
+  [
+    "sensor.wled_kuche_unterschranklicht_power",
+    "WLED Küche Unterschranklicht Power",
+    "WLED-Gledopto",
+    "kueche",
+    (t) => (between(hourAt(t), 6.5, 8) || between(hourAt(t), 17, 23) ? 5.3 : 0.6),
+  ],
+  ["sensor.stehlampe_power", "Stehlampe Leistung", "Stehlampe", "buero", (t) => (between(hourAt(t), 16.5, 23.5) ? 4.8 : 0)],
+  ["sensor.esszimmer_ambiente_power", "Esszimmer Ambiente Power", "Esszimmer Ambiente", "esszimmer", (t) => (between(hourAt(t), 17, 23) ? 2.9 : 0)],
+  ["sensor.staubsauger_power", "Staubsauger Leistung", "Staubsauger", "esszimmer", (t) => 3.6 * wobble(t, 6, 0.2)],
+  ["sensor.keller_heizung_power", "Keller Heizung Power", "Shelly Heizung Keller", "keller", (t) => 2.6],
+  ["sensor.tv_schalter_haupt_power", "TV Schalter Haupt Leistung", "TV Schalter Haupt", "wohnzimmer", (t) => (between(hourAt(t), 19, 23) ? 78 * wobble(t, 7, 0.2) : 0)],
+  ["sensor.wasserkocher_leistung", "Wasserkocher Leistung", "Matter Over WiFi Smart Switch", "kueche", (t, r) => (r && r.load > 1200 ? 1850 : 0)],
+  ["sensor.geschirrspuler_current_power", "Geschirrspüler Aktuelle Leistung", "Geschirrspüler", "kueche", () => 0],
+  ["sensor.waschmaschine_power", "Waschmaschine Leistung", "Waschmaschine", "keller", () => 0],
+  ["sensor.kaffeemaschine_power", "Kaffeemaschine Power", "Kaffeemaschine", "kueche", () => 0],
+  // Not consumers: the plug's own use (powercalc) and the balcony plant's inverter.
+  ["sensor.server_rack_10_device_power", "Server Rack 10 Device Power", "Shelly Server Rack 10", "buero", () => 1.01],
+  ["sensor.balkonkraftwerk_power", "Balkonkraftwerk Leistung", "Balkonkraftwerk", "aussen", (t, r) => (r ? r.pv : 0)],
+];
+const AREAS = { buero: "Büro", wohnzimmer: "Wohnzimmer", kueche: "Küche", esszimmer: "Esszimmer", keller: "Keller", aussen: "Außen" };
+const CONS_FIELD = Object.fromEntries(CONSUMERS.map(([id, , , , f]) => [id, (r) => f(r.t, r)]));
+
+/** Registry the way the frontend sees it: entities, devices and areas. */
+const registry = () => {
+  const entities = {};
+  const devices = {};
+  CONSUMERS.forEach(([id, , dev, area], i) => {
+    const did = `dev_${dev.replace(/\W/g, "_").toLowerCase()}`;
+    devices[did] = { id: did, name: dev, area_id: area };
+    entities[id] = { entity_id: id, device_id: did, platform: id.includes("device_power") ? "powercalc" : "mqtt" };
+    if (i === 0) entities[id].area_id = area;
+  });
+  devices.dev_solarbank = { id: "dev_solarbank", name: "Solarbank 2 E1600 AC", area_id: "aussen" };
+  entities["sensor.solarbank_2_e1600_ac_akkuleistung"] = { entity_id: "sensor.solarbank_2_e1600_ac_akkuleistung", device_id: "dev_solarbank", platform: "anker_solix" };
+  const areas = Object.fromEntries(Object.entries(AREAS).map(([id, name]) => [id, { area_id: id, name }]));
+  return { entities, devices, areas };
 };
 
 // ---------- hass ----------
@@ -223,6 +291,11 @@ export function makeHass({ lang = "de", scenario = "sim", minimal = false, weath
   const r = SCENARIOS[scenario] || rows.at(-1);
   const states = {};
   for (const [id, f] of Object.entries(POWER_FIELD)) states[id] = st(f(r).toFixed(0), id.endsWith("_soc") ? "%" : "W");
+  const last = rows.at(-1);
+  for (const [id, name, , , f] of CONSUMERS)
+    states[id] = st(f(Date.now(), { ...last, ...(SCENARIOS[scenario] || {}) }).toFixed(1), "W", { device_class: "power", friendly_name: name });
+  for (const id of Object.keys(POWER_FIELD))
+    if (!id.endsWith("_soc")) states[id].attributes.device_class = "power";
   const fc = Object.values(forecast().demo_forecast.wh_hours).reduce((a, b) => a + b, 0) / 1000;
   states["sensor.energy_production_today"] = st(fc.toFixed(3), "kWh");
   const sun = sunOf(Date.now());
@@ -244,6 +317,7 @@ export function makeHass({ lang = "de", scenario = "sim", minimal = false, weath
     locale: { language: lang },
     config: { time_zone: TZ, latitude: LAT, longitude: LON },
     states,
+    ...registry(),
     callWS: async (msg) => {
       await new Promise((res) => setTimeout(res, 30));
       const h = handlers[msg.type];
