@@ -1,6 +1,6 @@
 // Websocket fetchers with a cache: energy prefs, long-term statistics per period, the day's power history
 // (history, falling back to 5-minute / hourly statistics) and today's solar forecast.
-import { resolveSources, splitSlot, STAT_KEYS, summarize } from "./energy.js";
+import { entityList, resolveSources, splitSlot, STAT_KEYS, summarize } from "./energy.js";
 import { isCurrent } from "./period.js";
 
 const MIN = 60e3;
@@ -248,8 +248,8 @@ export function powerEntities(config, live = {}) {
     house: c.house_power_entity,
     soc: c.soc_entity,
   };
-  for (const k of Object.keys(map)) if (!map[k]) delete map[k];
-  return { ids: [...new Set(Object.values(map))], map };
+  for (const k of Object.keys(map)) if (!entityList(map[k]).length) delete map[k];
+  return { ids: [...new Set(Object.values(map).flatMap(entityList))], map };
 }
 
 /**
@@ -258,7 +258,17 @@ export function powerEntities(config, live = {}) {
  */
 export function powerSeries(raw, map, config, live = {}) {
   const n = raw.cells.length;
-  const get = (k) => (map[k] ? raw.series[map[k]] : undefined) || null;
+  // One entity, or the cell-wise sum of several (a cell counts once any of them has a value).
+  const get = (k) => {
+    const list = entityList(map[k])
+      .map((id) => raw.series[id])
+      .filter(Boolean);
+    if (list.length < 2) return list[0] || null;
+    return Array.from({ length: n }, (_, i) => {
+      const v = list.map((a) => a[i]).filter(Number.isFinite);
+      return v.length ? v.reduce((a, b) => a + b, 0) : null;
+    });
+  };
   const pos = (v) => (Number.isFinite(v) ? Math.max(0, v) : v);
   const neg = (v) => (Number.isFinite(v) ? Math.max(0, -v) : v);
   const out = { pv: get("solar"), soc: get("soc"), house: get("house") };

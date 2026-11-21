@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1 (2026-11-21)
+
+- **Several sources of one kind are summed:** with two balcony plants and a roof in the Energy dashboard, the live
+  values, the home power and the power chart took only the first PV source's sensor, so the consumers card showed far
+  too little at home (Haus B: 0 W instead of about 540 W while the battery charged). Now every source's power sensor
+  counts, for PV, batteries and grid; an unavailable one is skipped. `power_config.stat_rate` of newer cores is read
+  too. `solar_power_entity`, `grid_power_entity` and `battery_power_entity` also take a list.
+
 ## 0.7.0 (2026-11-20)
 
 - **KPI tiles** (as in the consumers card's tiles view, and the oil and heating cards): a round icon, the label, the

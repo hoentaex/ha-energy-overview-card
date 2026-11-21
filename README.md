@@ -137,11 +137,11 @@ forecast_today_entity: sensor.energy_production_today
 
 | Option | Bedeutung | Standard |
 |---|---|---|
-| `solar_power_entity` | PV-Leistung (W / kW) | Leistungssensor aus dem Energie-Dashboard |
+| `solar_power_entity` | PV-Leistung (W / kW); auch eine Liste, die summiert wird | Leistungssensor(en) aus dem Energie-Dashboard, mehrere PV-Quellen zusammen |
 | `grid_power_entity` | Netzleistung, + Bezug / − Einspeisung | Energie-Dashboard |
 | `invert_grid` | Vorzeichen der Netzleistung umdrehen | `false` |
 | `grid_import_power_entity` / `grid_export_power_entity` | Bezug und Einspeisung als zwei Sensoren (statt `grid_power_entity`) | – |
-| `battery_power_entity` | Akkuleistung, + laden / − entladen | Energie-Dashboard (dort + entladen, wird umgedreht) |
+| `battery_power_entity` | Akkuleistung, + laden / − entladen; auch eine Liste | Energie-Dashboard (dort + entladen, wird umgedreht; mehrere Akkus zusammen) |
 | `invert_battery` | Vorzeichen der Akkuleistung umdrehen | `false` |
 | `house_power_entity` | Hausverbrauch | berechnet |
 | `house_info_entity` | Sensor, den ein Klick auf den Verbrauch öffnet; gerechnet wird weiter ohne ihn (z. B. ein Zähler, der die Netzladung des Akkus mitzählt) | – |

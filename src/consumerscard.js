@@ -20,7 +20,7 @@ import {
   viewHTML,
 } from "./consumers.js";
 import { Cache, fetchPrefs, historyPoints } from "./data.js";
-import { deriveStatus, prefsLive, readLive } from "./energy.js";
+import { deriveStatus, entityList, prefsLive, readLive } from "./energy.js";
 import { svgIcon } from "./icons.js";
 import "./popup.js";
 import { DEFAULTS, esc, langOf, translator } from "./shared.js";
@@ -164,7 +164,8 @@ export class EnergyOverviewConsumersCard extends HTMLElement {
   _sig() {
     const ids = this._items().map((i) => i.entity);
     const live = Object.values({ ...this._live, ...this._config })
-      .filter((v) => typeof v === "string" && v.includes("."))
+      .flatMap(entityList)
+      .filter((v) => v.includes("."))
       .map((id) => this._hass.states?.[id]?.state);
     return [
       this._hass.themes?.darkMode,

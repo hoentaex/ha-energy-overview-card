@@ -49,20 +49,31 @@ export function resolveSources(config, prefs) {
 export const forecastEntries = (prefs) =>
   (prefs?.energy_sources || []).filter((s) => s.type === "solar").flatMap((s) => s.config_entry_solar_forecast || []);
 
+/** A power entity option: one id or a list of ids (summed). */
+export const entityList = (v) => (Array.isArray(v) ? v : [v]).filter((s) => typeof s === "string" && s);
+
+/** The power sensor of a source: `stat_rate`, or `power_config.stat_rate` (newer cores). */
+const rateOf = (src) => src.stat_rate || src.power_config?.stat_rate || null;
+
 /**
- * Live power entities from the prefs (`stat_rate`, newer cores). The Energy dashboard counts battery power
- * positive while discharging; the card counts it positive while charging, hence `battery_sign: -1`.
+ * Live power entities from the prefs (`stat_rate`). Several sources of one kind (two balcony plants and a roof,
+ * two batteries) are all taken: one id stays a string, several become a list that readLive and the chart sum.
+ * The Energy dashboard counts battery power positive while discharging; the card counts it positive while
+ * charging, hence `battery_sign: -1`.
  */
 export function prefsLive(prefs) {
-  const out = {};
+  const lists = { solar: [], grid: [], battery: [] };
   for (const src of prefs?.energy_sources || []) {
-    if (!src.stat_rate) continue;
-    if (src.type === "solar" && !out.solar_power_entity) out.solar_power_entity = src.stat_rate;
-    if (src.type === "grid" && !out.grid_power_entity) out.grid_power_entity = src.stat_rate;
-    if (src.type === "battery" && !out.battery_power_entity) {
-      out.battery_power_entity = src.stat_rate;
-      out.battery_sign = -1;
-    }
+    const id = rateOf(src);
+    if (id && lists[src.type] && !lists[src.type].includes(id)) lists[src.type].push(id);
+  }
+  const one = (l) => (l.length > 1 ? l : l[0]);
+  const out = {};
+  if (lists.solar.length) out.solar_power_entity = one(lists.solar);
+  if (lists.grid.length) out.grid_power_entity = one(lists.grid);
+  if (lists.battery.length) {
+    out.battery_power_entity = one(lists.battery);
+    out.battery_sign = -1;
   }
   return out;
 }
@@ -122,13 +133,21 @@ export function summarize(slots, co2Factor = 0.4) {
 
 // ---- live ----
 
-const numState = (hass, id) => {
+const oneState = (hass, id) => {
   const s = id && hass?.states?.[id];
   if (!s) return null;
   const n = Number.parseFloat(s.state);
   if (!Number.isFinite(n)) return null;
   const unit = String(s.attributes?.unit_of_measurement || "").toLowerCase();
   return unit === "kw" ? n * 1000 : unit === "mw" ? n * 1e6 : n;
+};
+
+/** W of one entity or the sum of a list; null when none of them has a number (an unavailable one is skipped). */
+const numState = (hass, v) => {
+  const vals = entityList(v)
+    .map((id) => oneState(hass, id))
+    .filter((n) => n !== null);
+  return vals.length ? vals.reduce((a, b) => a + b, 0) : null;
 };
 
 /**

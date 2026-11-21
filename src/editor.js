@@ -467,8 +467,10 @@ export class EnergyOverviewBalanceCardEditor extends EnergyOverviewMiniCardEdito
 export function detectConfig(hass, prefs) {
   const config = {};
   const live = prefsLive(prefs);
-  for (const k of LIVE_FROM_PREFS) if (live[k]) config[k] = live[k];
-  if (live.battery_power_entity) config.invert_battery = true;
+  // Only single sensors go into the editor's entity pickers; several of one kind stay empty, so the card keeps
+  // summing them from the prefs.
+  for (const k of LIVE_FROM_PREFS) if (typeof live[k] === "string") config[k] = live[k];
+  if (typeof live.battery_power_entity === "string") config.invert_battery = true;
   const states = hass?.states || {};
   const ids = Object.keys(states);
   const isSoc = (id) =>
@@ -476,7 +478,7 @@ export function detectConfig(hass, prefs) {
     states[id].attributes?.unit_of_measurement === "%" &&
     (states[id].attributes?.device_class === "battery" || /(_soc|ladestand|state_of_charge)$/.test(id));
   // Prefer a SoC sensor that shares a name part with the battery power sensor.
-  const stem = (live.battery_power_entity || "")
+  const stem = ([live.battery_power_entity].flat()[0] || "")
     .replace(/^sensor\./, "")
     .split("_")
     .slice(0, 2)

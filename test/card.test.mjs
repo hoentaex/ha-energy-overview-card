@@ -93,3 +93,13 @@ test("battery history: charge up, discharge down, SoC line only in the upper par
   assert.match(html, /−0,5/);
   assert.match(html, /class="col future"/);
 });
+
+test("power chart sums several sensors of one kind", () => {
+  const live = { solar_power_entity: ["pv1", "pv2"], grid_power_entity: "grid" };
+  const { ids, map } = powerEntities({}, live);
+  assert.deepEqual(ids.sort(), ["grid", "pv1", "pv2"]);
+  const raw = { cells: [0, 1, 2], series: { pv1: [100, null, null], pv2: [50, 30, null], grid: [10, 10, 10] } };
+  const s = powerSeries(raw, map, {}, live);
+  assert.deepEqual(s.pv, [150, 30, null]);
+  assert.deepEqual(s.house, [160, 40, 10]);
+});

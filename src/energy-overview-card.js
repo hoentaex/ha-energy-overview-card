@@ -19,7 +19,7 @@ import {
   powerEntities,
   powerSeries,
 } from "./data.js";
-import { deriveStatus, forecastEntries, prefsLive, readLive } from "./energy.js";
+import { deriveStatus, entityList, forecastEntries, prefsLive, readLive } from "./energy.js";
 import { canGoForward, isCurrent, periodRange, shiftAnchor } from "./period.js";
 import { socColor } from "./flow.js";
 import {
@@ -58,8 +58,8 @@ const TICK = 60e3;
 const liveKeys = (config, live) =>
   [
     ...Object.entries({ ...live, ...config })
-      .filter(([k, v]) => typeof v === "string" && /_entity$/.test(k))
-      .map(([, v]) => v),
+      .filter(([k]) => /_entity$/.test(k))
+      .flatMap(([, v]) => entityList(v)),
   ].sort();
 
 export class EnergyOverviewCard extends HTMLElement {

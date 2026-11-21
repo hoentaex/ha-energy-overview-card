@@ -167,3 +167,40 @@ test("status pill", () => {
   assert.equal(deriveStatus({ solar: 1050, battery_charge: 520, grid_export: 300 }), "pv_charging");
   assert.equal(deriveStatus({ solar: 8, grid_import: 8 }), "grid_house");
 });
+
+// Haus B, 21.11.2026: three PV sources (two balcony plants and the roof), the grid via power_config.
+const PREFS_ZDF = {
+  energy_sources: [
+    { type: "solar", stat_rate: "sensor.garage" },
+    { type: "solar", stat_rate: "sensor.haupt" },
+    { type: "battery", power_config: { stat_rate: "sensor.bat" } },
+    { type: "solar", stat_rate: "sensor.balkon" },
+    { type: "grid", power_config: { stat_rate: "sensor.grid" } },
+  ],
+};
+
+test("several sources of one kind are summed (Haus B: three PV sources)", () => {
+  const live = prefsLive(PREFS_ZDF);
+  assert.deepEqual(live.solar_power_entity, ["sensor.garage", "sensor.haupt", "sensor.balkon"]);
+  assert.equal(live.grid_power_entity, "sensor.grid");
+  assert.equal(live.battery_power_entity, "sensor.bat");
+  const hass = {
+    states: {
+      "sensor.garage": st(191.5),
+      "sensor.haupt": st(6.026, "kW"),
+      "sensor.balkon": st(179.6),
+      "sensor.grid": st(65),
+      "sensor.bat": st(-5926),
+    },
+  };
+  const l = readLive(hass, {}, live);
+  close(l.solar, 6397.1, 1e-6);
+  assert.equal(l.battery_charge, 5926);
+  close(l.house, 536.1, 1e-6);
+  // An unavailable source is skipped, the others still count; all unavailable: no value.
+  hass.states["sensor.balkon"] = st("unavailable");
+  close(readLive(hass, {}, live).solar, 6217.5, 1e-6);
+  assert.equal(readLive({ states: {} }, {}, live).solar, null);
+  // An own option still wins over the prefs.
+  assert.equal(readLive(hass, { solar_power_entity: "sensor.garage" }, live).solar, 191.5);
+});

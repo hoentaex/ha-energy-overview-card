@@ -11,7 +11,10 @@ const isEntity = (id) => typeof id === "string" && /^[a-z_]+\.[a-z0-9_]+$/.test(
  * an entity; external statistics have no dialog).
  */
 export function moreIds(config, live = {}, prefs = null) {
-  const c = { ...live, ...config };
+  // Several sensors of one kind (summed in the card): the dialog shows the first.
+  const c = Object.fromEntries(
+    Object.entries({ ...live, ...config }).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]),
+  );
   const split = !!(config.grid_import_power_entity || config.grid_export_power_entity);
   const src = resolveSources(config, prefs);
   const first = (k) => (src[k] || []).find(isEntity);
