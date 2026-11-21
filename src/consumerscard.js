@@ -7,6 +7,7 @@ import {
   CONSUMERS_STYLE,
   consIcon,
   consumerEntities,
+  minusHistory,
   consumerModel,
   consumersScene,
   fmtW,
@@ -119,8 +120,12 @@ export class EnergyOverviewConsumersCard extends HTMLElement {
   /** Power history of the consumers on now (6 h): on-since and the sparkline of the last hour. */
   async _loadHistory(force = false) {
     if (!this._hass || !this._config || this._config.layout === "mini") return;
-    const ids = (this._model?.active || []).map((c) => c.id).sort();
+    const active = this._model?.active || [];
+    const ids = active.map((c) => c.id).sort();
     if (!ids.length || !this._hass.callWS) return;
+    // Parents with sub-meters show their rest: their children's history comes along.
+    const minus = Object.fromEntries(active.filter((c) => c.minus?.length).map((c) => [c.id, c.minus]));
+    const fetchIds = [...new Set([...ids, ...Object.values(minus).flat()])];
     const key = ids.join(",");
     if (!force && key === this._histKey) return;
     this._histKey = key;
@@ -129,20 +134,30 @@ export class EnergyOverviewConsumersCard extends HTMLElement {
       type: "history/history_during_period",
       start_time: new Date(now - HISTORY_HOURS * 60 * MIN).toISOString(),
       end_time: new Date(now).toISOString(),
-      entity_ids: ids,
+      entity_ids: fetchIds,
       minimal_response: true,
       no_attributes: true,
       significant_changes_only: false,
     };
     const res = await this._hass.callWS(req).catch(() => null);
     if (!res) return;
-    const hist = {};
-    for (const id of ids) {
+    const raw = {};
+    for (const id of fetchIds) {
       const unit = String(this._hass.states?.[id]?.attributes?.unit_of_measurement || "").toLowerCase();
       const pts = historyPoints(res[id], unit === "kw" ? 1000 : 1);
       // The current state is the last point, so the sparkline reaches up to now.
       const cur = Number.parseFloat(this._hass.states?.[id]?.state);
       if (Number.isFinite(cur)) pts.push({ t: Date.now(), v: cur * (unit === "kw" ? 1000 : 1) });
+      raw[id] = pts;
+    }
+    const hist = {};
+    for (const id of ids) {
+      const pts = minus[id]
+        ? minusHistory(
+            raw[id],
+            minus[id].map((c) => raw[c] || []),
+          )
+        : raw[id];
       if (pts.length) hist[id] = pts;
     }
     this._hist = hist;
@@ -162,7 +177,7 @@ export class EnergyOverviewConsumersCard extends HTMLElement {
   }
 
   _sig() {
-    const ids = this._items().map((i) => i.entity);
+    const ids = this._items().flatMap((i) => [i.entity, ...(i.minus || [])]);
     const live = Object.values({ ...this._live, ...this._config })
       .flatMap(entityList)
       .filter((v) => v.includes("."))

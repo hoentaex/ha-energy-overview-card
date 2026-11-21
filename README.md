@@ -296,7 +296,8 @@ und den Anteil am Haus. Ein Klick öffnet den Dialog des Sensors. Über der List
 liegen, stehen eingeklappt unten.
 
 Ohne `entities` sucht die Karte selbst: Hat das Energie-Dashboard einzelne Geräte mit Leistungssensor, nimmt sie diese
-(ohne die Geräte, in denen andere schon mitgezählt sind). Sonst nimmt sie alle Leistungssensoren, die zu einem Gerät
+(ein übergeordneter Zähler, dem andere Geräte als „Upstream-Gerät“ zugeordnet sind, zeigt nur seinen Rest: eigener
+Wert minus seine Unterzähler, auch über mehrere Ebenen). Sonst nimmt sie alle Leistungssensoren, die zu einem Gerät
 gehören oder einem Raum zugeordnet sind (die alte Homematic-Integration legt keine Geräte an), ohne PV, Wechselrichter
 (auch an ihren DC- und Ertragssensoren erkannt), Netz, Akku, Zähler, Summen, Helfer und den Eigenverbrauch der
 Steckdosen (`…_device_power`). Was zusätzlich dazugehört, etwa ein Unterzähler für Garten oder Garage, kommt unter
@@ -423,7 +424,8 @@ flows. A click opens the main card. Same options.
 with its room, how long it has been on, a sparkline of the last hour and its share of the home, plus what no meter
 covers ("untracked"). A switch above the list changes between list, room and tiles (`view`, `view_switch`);
 `layout: mini` shows the header, the top three and the bar and opens the full card. Without `entities` it takes the
-Energy dashboard's individual devices with a power sensor, or else every power sensor of a device or with a room
+Energy dashboard's individual devices with a power sensor (a parent shows only its rest, its own power less its
+children's), or else every power sensor of a device or with a room
 except generation, grid, battery, meters, totals, helpers and the smart plugs' own use; add sub-meters with `include`,
 hide double counts with `exclude`. Options:
 `min_power` (1 W), `max_items`, `show_untracked`, `house_power_entity` and the header options of the main card.

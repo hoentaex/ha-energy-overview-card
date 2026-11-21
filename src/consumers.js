@@ -145,15 +145,34 @@ export function sourceIds(prefs, config = {}) {
 }
 
 /**
- * Consumers from the Energy dashboard's individual devices that carry a power sensor (stat_rate). Parents that other
- * devices are counted in (included_in_stat) are left out, so nothing is counted twice.
+ * Consumers from the Energy dashboard's individual devices that carry a power sensor (stat_rate). A parent that other
+ * devices are counted in (included_in_stat, a sub-meter for the garden, say) stays with only its rest: `minus` lists
+ * the power sensors of its children, so nothing is counted twice and nothing the parent alone measures is lost.
  */
 export function prefsConsumers(prefs) {
   const devs = prefs?.device_consumption || [];
-  const parents = new Set(devs.map((d) => d.included_in_stat).filter(Boolean));
+  const children = new Map();
+  for (const d of devs)
+    if (d.included_in_stat && typeof d.stat_rate === "string")
+      children.set(d.included_in_stat, [...(children.get(d.included_in_stat) || []), d.stat_rate]);
   return devs
-    .filter((d) => typeof d.stat_rate === "string" && !parents.has(d.stat_consumption))
-    .map((d) => ({ entity: d.stat_rate, name: d.name || undefined }));
+    .filter((d) => typeof d.stat_rate === "string")
+    .map((d) => {
+      const minus = children.get(d.stat_consumption);
+      return minus
+        ? { entity: d.stat_rate, name: d.name || undefined, minus }
+        : { entity: d.stat_rate, name: d.name || undefined };
+    });
+}
+
+/** Power of a consumer in W: its sensor, less the sensors in `minus` (children counted on their own), never below 0. */
+export function itemPower(hass, item) {
+  const w = powerOf(hass, item.entity);
+  if (w === null || !item.minus?.length) return w;
+  return Math.max(
+    0,
+    item.minus.reduce((s, id) => s - (powerOf(hass, id) || 0), w),
+  );
 }
 
 const asItem = (e) => (typeof e === "string" ? { entity: e } : e);
@@ -193,6 +212,39 @@ export function consumerEntities(hass, config = {}, prefs = null) {
     out.push({ entity: id });
   }
   return finish(out);
+}
+
+/**
+ * History of a parent less its children: at every change of any of them, the parent's last value minus the children's
+ * last values (a child without a value yet counts 0), never below 0. Points are { t, v } sorted by time.
+ */
+export function minusHistory(parent, children = []) {
+  if (!children.length) return parent;
+  const at = (pts, t) => {
+    let v = null;
+    for (const p of pts) {
+      if (p.t > t) break;
+      v = p.v;
+    }
+    return v;
+  };
+  const times = [...new Set([parent, ...children].flatMap((pts) => pts.map((p) => p.t)))].sort((a, b) => a - b);
+  const first = parent[0]?.t ?? Number.POSITIVE_INFINITY;
+  return times
+    .filter((t) => t >= first)
+    .map((t) => {
+      const v = at(parent, t);
+      return {
+        t,
+        v:
+          v === null
+            ? null
+            : Math.max(
+                0,
+                children.reduce((s, c) => s - (at(c, t) || 0), v),
+              ),
+      };
+    });
 }
 
 // ---------- names, rooms, kinds ----------
@@ -314,7 +366,8 @@ export function consumerModel(hass, config, items, { house = null, hist = {}, no
       icon: it.icon || hass?.entities?.[it.entity]?.icon || hass?.states?.[it.entity]?.attributes?.icon || null,
       kind: kindOf(name, it.entity),
       area: it.area || areaOf(hass, it.entity),
-      w: powerOf(hass, it.entity),
+      w: itemPower(hass, it),
+      minus: it.minus || null,
     };
   });
   const active = all.filter((c) => c.w !== null && c.w >= min && c.w > 0).sort((a, b) => b.w - a.w);

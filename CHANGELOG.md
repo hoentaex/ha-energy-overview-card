@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.2 (2026-11-21)
+
+- **Consumers card: parent meters show their rest.** A device that others are counted in (its "upstream device" in the
+  Energy dashboard, a sub-meter for the garden, say) was left out entirely, so everything only it measures ended up as
+  "untracked" (Haus B: about 390 W of the garden meter). Now it stays in the list with its own power less its
+  children's, never below 0; the children stay on their own, so nothing counts twice. Works over several levels; the
+  sparkline and "on since" use the rest too.
+
 ## 0.7.1 (2026-11-21)
 
 - **Several sources of one kind are summed:** with two balcony plants and a roof in the Energy dashboard, the live

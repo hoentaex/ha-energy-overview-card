@@ -10,6 +10,8 @@ import {
   kindOf,
   onSince,
   prefsConsumers,
+  itemPower,
+  minusHistory,
   sinceText,
   sparkSeries,
   stackSegments,
@@ -85,9 +87,60 @@ test("detection: exclude list, explicit entities, Energy dashboard devices", () 
       { stat_consumption: "sensor.tv_kwh" },
     ],
   };
-  // The power strip is the parent of the PC: only the PC counts; the TV has no power sensor.
-  assert.deepEqual(prefsConsumers(dash), [{ entity: "sensor.pc_w", name: undefined }]);
-  assert.deepEqual(consumerEntities(hass, {}, dash), [{ entity: "sensor.pc_w", name: undefined }]);
+  // The power strip is the parent of the PC: it stays with its rest (minus the PC); the TV has no power sensor.
+  const both = [
+    { entity: "sensor.leiste_w", name: "Leiste", minus: ["sensor.pc_w"] },
+    { entity: "sensor.pc_w", name: undefined },
+  ];
+  assert.deepEqual(prefsConsumers(dash), both);
+  assert.deepEqual(consumerEntities(hass, {}, dash), both);
+});
+
+test("parent with sub-meters: shows its rest, live and in the history", () => {
+  const h = {
+    states: {
+      "sensor.garten_w": { state: "457", attributes: { unit_of_measurement: "W" } },
+      "sensor.licht_w": { state: "20", attributes: { unit_of_measurement: "W" } },
+      "sensor.palme_w": { state: "0.04", attributes: { unit_of_measurement: "kW" } },
+      "sensor.off_w": { state: "unavailable", attributes: { unit_of_measurement: "W" } },
+    },
+  };
+  assert.equal(
+    itemPower(h, { entity: "sensor.garten_w", minus: ["sensor.licht_w", "sensor.palme_w", "sensor.off_w"] }),
+    397,
+  );
+  assert.equal(itemPower(h, { entity: "sensor.licht_w", minus: ["sensor.garten_w"] }), 0);
+  const items = [
+    { entity: "sensor.garten_w", name: "Garten", minus: ["sensor.licht_w", "sensor.palme_w"] },
+    { entity: "sensor.licht_w", name: "Licht" },
+    { entity: "sensor.palme_w", name: "Palme" },
+  ];
+  const m = consumerModel(h, { min_power: 1 }, items, { house: 600 });
+  assert.deepEqual(
+    m.active.map((c) => [c.name, Math.round(c.w)]),
+    [
+      ["Garten", 397],
+      ["Palme", 40],
+      ["Licht", 20],
+    ],
+  );
+  assert.equal(Math.round(m.sum), 457);
+  assert.equal(Math.round(m.untracked), 143);
+  const parent = [
+    { t: 0, v: 100 },
+    { t: 10, v: 300 },
+  ];
+  const child = [
+    { t: 5, v: 40 },
+    { t: 20, v: 0 },
+  ];
+  assert.deepEqual(minusHistory(parent, [child]), [
+    { t: 0, v: 100 },
+    { t: 5, v: 60 },
+    { t: 10, v: 260 },
+    { t: 20, v: 300 },
+  ]);
+  assert.equal(minusHistory(parent, []), parent);
 });
 
 test("names: device name when it is not technical, else a tidied friendly name", () => {
